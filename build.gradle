@@ -64,6 +64,8 @@ neoForge {
     runs {
         client {
             client()
+            // Larger dev window for in-game tests and screenshots
+            programArguments.addAll '--width', '1600', '--height', '900'
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }

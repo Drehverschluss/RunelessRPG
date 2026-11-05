@@ -1,1 +1,11 @@
-{}
+{
+  "attribute.name.runelessrpg.max_mana": "Max. Mana",
+  "attribute.name.runelessrpg.mana_regen": "Mana-Regeneration",
+  "attribute.name.runelessrpg.mana_cost": "Manakosten",
+  "attribute.name.runelessrpg.overcharge": "Überladung",
+  "attribute.name.runelessrpg.mana_leech": "Mana-Entzug",
+  "attribute.runelessrpg.value.per_second": "%s/s",
+
+  "commands.runelessrpg.mana.get": "%s: %s / %s Mana (%s/s)",
+  "commands.runelessrpg.mana.set": "%s: %s / %s Mana"
+}
