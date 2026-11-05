@@ -38,3 +38,9 @@ run/
 **/src/generated/**/.cache/
 repo/
 !**/src/**/repo/
+
+### Lokale Projekt-Ordner (nicht im Repo) ###
+Konzept/
+CurseforgeSachen/
+*-Prompt.txt
+libs/
