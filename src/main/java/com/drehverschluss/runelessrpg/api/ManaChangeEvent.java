@@ -23,7 +23,9 @@ public class ManaChangeEvent extends Event {
         /** Refill after the player respawned. */
         RESPAWN,
         /** Lowered to a smaller maximum, e.g. after removing gear with max mana. */
-        CLAMP
+        CLAMP,
+        /** Paid for a spell (also every tick of a channeled spell). May go below 0 in the debt modes. */
+        SPELL
     }
 
     private final Player player;
@@ -48,7 +50,7 @@ public class ManaChangeEvent extends Event {
         return oldMana;
     }
 
-    /** @return the mana after the change, already clamped to {@code 0 … max_mana} */
+    /** @return the mana after the change; clamped to {@code 0 … max_mana}, except spells in a debt mode (may be negative) */
     public double getNewMana() {
         return newMana;
     }

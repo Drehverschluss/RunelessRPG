@@ -1,4 +1,6 @@
 {
+  "item.runelessrpg.mana": "Mana",
+
   "attribute.name.runelessrpg.max_mana": "Max Mana",
   "attribute.name.runelessrpg.mana_regen": "Mana Regeneration",
   "attribute.name.runelessrpg.mana_cost": "Mana Cost",
@@ -6,6 +8,18 @@
   "attribute.name.runelessrpg.mana_leech": "Mana Leech",
   "attribute.runelessrpg.value.per_second": "%s/s",
 
+  "spell.tooltip.runelessrpg.mana": "Mana: %s",
+  "spell.tooltip.runelessrpg.mana.channel": "Mana: %s (%s/s)",
+
   "commands.runelessrpg.mana.get": "%s: %s / %s Mana (%s/s)",
-  "commands.runelessrpg.mana.set": "%s: %s / %s Mana"
+  "commands.runelessrpg.mana.set": "%s: %s / %s Mana",
+  "commands.runelessrpg.cost.unknown": "Unknown spell: %s",
+  "commands.runelessrpg.cost.header": "%s: category %s, source %s, tier %s",
+  "commands.runelessrpg.cost.none": "Does not cost mana (Spell Engine costs apply)",
+  "commands.runelessrpg.cost.base": "Base cost: %s",
+  "commands.runelessrpg.cost.factors": "%s: Mana Cost %s (floor %s, used %s), Overcharge %s",
+  "commands.runelessrpg.cost.result": "Cost: %s",
+  "commands.runelessrpg.cost.channel": "Channel: %s ticks, %s per tick, mode %s, start share %s%%",
+  "commands.runelessrpg.report.done": "Spell cost report written: %s spells, %s",
+  "commands.runelessrpg.report.failed": "Could not write the spell cost report: %s"
 }

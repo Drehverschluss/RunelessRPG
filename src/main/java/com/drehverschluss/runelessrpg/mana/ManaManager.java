@@ -60,6 +60,26 @@ public final class ManaManager {
         return true;
     }
 
+    /**
+     * Removes mana for a spell. With {@code allowDebt} the result may become negative (DEBT modes), otherwise it stops at 0.
+     */
+    public static void spendForSpell(ServerPlayer player, double amount, boolean allowDebt) {
+        double old = getMana(player);
+        double next = Math.min(old - amount, getMaxMana(player));
+        if (!allowDebt) {
+            next = Math.max(0.0, next);
+        }
+        if (Math.abs(next) < 1.0E-9) {
+            next = 0.0; // float residue from fractional channel ticks
+        }
+        if (next == old) {
+            return;
+        }
+        player.setData(ManaAttachments.MANA, next);
+        NeoForge.EVENT_BUS.post(new ManaChangeEvent(player, old, next, ManaChangeEvent.Reason.SPELL));
+        sync(player);
+    }
+
     /** Fills a player that has never stored mana before. Returns true if the player was new. */
     static boolean initializeIfMissing(ServerPlayer player) {
         if (player.hasData(ManaAttachments.MANA)) {
@@ -84,7 +104,13 @@ public final class ManaManager {
         }
         double max = getMaxMana(player);
         double current = getMana(player);
-        double next = clamp(current + regenPerTick, max);
+        double next;
+        if (current < 0.0) {
+            // Debt from spells: positive regeneration pays it back, negative regeneration never deepens it.
+            next = regenPerTick > 0.0 ? Math.min(current + regenPerTick, max) : current;
+        } else {
+            next = clamp(current + regenPerTick, max);
+        }
         if (next == current) {
             return;
         }

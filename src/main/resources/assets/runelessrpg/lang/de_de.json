@@ -1,4 +1,6 @@
 {
+  "item.runelessrpg.mana": "Mana",
+
   "attribute.name.runelessrpg.max_mana": "Max. Mana",
   "attribute.name.runelessrpg.mana_regen": "Mana-Regeneration",
   "attribute.name.runelessrpg.mana_cost": "Manakosten",
@@ -6,6 +8,18 @@
   "attribute.name.runelessrpg.mana_leech": "Mana-Entzug",
   "attribute.runelessrpg.value.per_second": "%s/s",
 
+  "spell.tooltip.runelessrpg.mana": "Mana: %s",
+  "spell.tooltip.runelessrpg.mana.channel": "Mana: %s (%s/s)",
+
   "commands.runelessrpg.mana.get": "%s: %s / %s Mana (%s/s)",
-  "commands.runelessrpg.mana.set": "%s: %s / %s Mana"
+  "commands.runelessrpg.mana.set": "%s: %s / %s Mana",
+  "commands.runelessrpg.cost.unknown": "Unbekannter Zauber: %s",
+  "commands.runelessrpg.cost.header": "%s: Kategorie %s, Quelle %s, Stufe %s",
+  "commands.runelessrpg.cost.none": "Kostet kein Mana (Kosten von Spell Engine gelten)",
+  "commands.runelessrpg.cost.base": "Grundkosten: %s",
+  "commands.runelessrpg.cost.factors": "%s: Manakosten %s (Untergrenze %s, verwendet %s), Überladung %s",
+  "commands.runelessrpg.cost.result": "Kosten: %s",
+  "commands.runelessrpg.cost.channel": "Kanal: %s Ticks, %s pro Tick, Modus %s, Startanteil %s%%",
+  "commands.runelessrpg.report.done": "Kostenübersicht geschrieben: %s Zauber, %s",
+  "commands.runelessrpg.report.failed": "Kostenübersicht konnte nicht geschrieben werden: %s"
 }

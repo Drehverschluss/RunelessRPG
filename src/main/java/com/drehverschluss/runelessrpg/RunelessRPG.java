@@ -3,6 +3,8 @@ package com.drehverschluss.runelessrpg;
 import com.drehverschluss.runelessrpg.attribute.RunelessAttributes;
 import com.drehverschluss.runelessrpg.command.RunelessCommands;
 import com.drehverschluss.runelessrpg.config.RunelessServerConfig;
+import com.drehverschluss.runelessrpg.cost.CostEvents;
+import com.drehverschluss.runelessrpg.item.RunelessItems;
 import com.drehverschluss.runelessrpg.mana.ManaAttachments;
 import com.drehverschluss.runelessrpg.mana.ManaEvents;
 import com.drehverschluss.runelessrpg.network.RunelessNetwork;
@@ -22,9 +24,11 @@ public class RunelessRPG {
     public RunelessRPG(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.SERVER, RunelessServerConfig.SPEC);
         RunelessAttributes.register(modEventBus);
+        RunelessItems.register(modEventBus);
         ManaAttachments.register(modEventBus);
         RunelessNetwork.register(modEventBus);
         ManaEvents.register(modEventBus);
+        CostEvents.register(modEventBus);
         NeoForge.EVENT_BUS.addListener(RunelessCommands::onRegisterCommands);
     }
 }

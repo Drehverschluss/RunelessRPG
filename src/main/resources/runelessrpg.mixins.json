@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.drehverschluss.runelessrpg.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "AmmoMixin",
+    "SpellCastInteractorMixin",
+    "SpellExecutionMixin"
+  ],
+  "client": [
+    "client.SpellTooltipMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

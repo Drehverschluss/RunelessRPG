@@ -1,0 +1,7 @@
+{
+  "_comment": "Texture from RPGMana by cleannrooster (CC0): assets/rpgmana/textures/item/mana.png",
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "runelessrpg:item/mana"
+  }
+}

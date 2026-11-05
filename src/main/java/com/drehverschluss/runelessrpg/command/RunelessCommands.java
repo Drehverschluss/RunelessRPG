@@ -1,22 +1,38 @@
 package com.drehverschluss.runelessrpg.command;
 
 import com.drehverschluss.runelessrpg.api.ManaChangeEvent;
+import com.drehverschluss.runelessrpg.attribute.RunelessAttributes;
+import com.drehverschluss.runelessrpg.cost.CostSettings;
+import com.drehverschluss.runelessrpg.cost.ManaCosts;
+import com.drehverschluss.runelessrpg.cost.SpellCostInfo;
+import com.drehverschluss.runelessrpg.cost.SpellCostReport;
 import com.drehverschluss.runelessrpg.mana.ManaManager;
+import com.drehverschluss.runelessrpg.util.CostFormat;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.spell_engine.api.spell.Spell;
+import net.spell_engine.api.spell.registry.SpellRegistry;
 
 import java.util.Collection;
 import java.util.Locale;
 
 public final class RunelessCommands {
+    private static final DynamicCommandExceptionType UNKNOWN_SPELL =
+            new DynamicCommandExceptionType(id -> Component.translatable("commands.runelessrpg.cost.unknown", id));
+
     private RunelessCommands() {}
 
     public static void onRegisterCommands(RegisterCommandsEvent event) {
@@ -34,7 +50,15 @@ public final class RunelessCommands {
                                                 .executes(ctx -> change(ctx, false))))
                                 .then(Commands.literal("add")
                                         .then(Commands.argument("amount", DoubleArgumentType.doubleArg())
-                                                .executes(ctx -> change(ctx, true)))))));
+                                                .executes(ctx -> change(ctx, true))))))
+                .then(Commands.literal("cost")
+                        .then(Commands.argument("spell", ResourceLocationArgument.id())
+                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggestResource(
+                                        SpellRegistry.from(ctx.getSource().getLevel()).keySet(), builder))
+                                .executes(ctx -> cost(ctx, null))
+                                .then(Commands.argument("player", EntityArgument.player())
+                                        .executes(ctx -> cost(ctx, EntityArgument.getPlayer(ctx, "player"))))))
+                .then(Commands.literal("report").executes(RunelessCommands::report)));
     }
 
     private static int get(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -62,7 +86,56 @@ public final class RunelessCommands {
         return targets.size();
     }
 
+    private static int cost(CommandContext<CommandSourceStack> ctx, ServerPlayer target) throws CommandSyntaxException {
+        CommandSourceStack source = ctx.getSource();
+        ResourceLocation id = ResourceLocationArgument.getId(ctx, "spell");
+        Holder<Spell> holder = SpellRegistry.from(source.getLevel()).getHolder(id).orElseThrow(() -> UNKNOWN_SPELL.create(id.toString()));
+        ServerPlayer player = target != null ? target : source.getPlayer();
+        SpellCostInfo info = ManaCosts.resolve(source.getLevel(), holder);
+        Spell spell = holder.value();
+
+        source.sendSuccess(() -> Component.translatable("commands.runelessrpg.cost.header", id.toString(),
+                info.category().name(), info.source().name(), spell.tier), false);
+        if (!info.costsMana()) {
+            source.sendSuccess(() -> Component.translatable("commands.runelessrpg.cost.none"), false);
+            return 1;
+        }
+        source.sendSuccess(() -> Component.translatable("commands.runelessrpg.cost.base", CostFormat.format(info.baseCost())), false);
+        if (player == null) {
+            return 1;
+        }
+        CostSettings settings = CostSettings.server();
+        double manaCost = player.getAttributeValue(RunelessAttributes.MANA_COST);
+        double factor = ManaCosts.manaCostFactor(player, holder);
+        double overcharge = player.getAttributeValue(RunelessAttributes.OVERCHARGE);
+        double total = ManaCosts.cost(player, holder, info);
+        source.sendSuccess(() -> Component.translatable("commands.runelessrpg.cost.factors", player.getDisplayName(),
+                percent(manaCost), percent(settings.minManaCostPercent() / 100.0), percent(factor), percent(overcharge)), false);
+        source.sendSuccess(() -> Component.translatable("commands.runelessrpg.cost.result", CostFormat.format(total)), false);
+        if (info.channeled()) {
+            int ticks = ManaCosts.channelTicks(player, holder);
+            source.sendSuccess(() -> Component.translatable("commands.runelessrpg.cost.channel", ticks,
+                    CostFormat.format(total / ticks), settings.channelCostMode().name(), CostFormat.format(settings.channelStartPercent())), false);
+        }
+        return 1;
+    }
+
+    private static int report(CommandContext<CommandSourceStack> ctx) {
+        SpellCostReport.Result result = SpellCostReport.write(ctx.getSource().getServer());
+        if (result.spells() < 0) {
+            ctx.getSource().sendFailure(Component.translatable("commands.runelessrpg.report.failed", result.file().toString()));
+            return 0;
+        }
+        ctx.getSource().sendSuccess(() -> Component.translatable("commands.runelessrpg.report.done", result.spells(),
+                result.file().toAbsolutePath().normalize().toString()), true);
+        return result.spells();
+    }
+
     private static String format(double value) {
         return String.format(Locale.ROOT, "%.1f", value);
+    }
+
+    private static String percent(double value) {
+        return CostFormat.format(value * 100.0) + "%";
     }
 }

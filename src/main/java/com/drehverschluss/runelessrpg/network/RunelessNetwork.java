@@ -6,7 +6,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public final class RunelessNetwork {
-    private static final String PROTOCOL_VERSION = "1";
+    private static final String PROTOCOL_VERSION = "2";
 
     private RunelessNetwork() {}
 
@@ -19,5 +19,9 @@ public final class RunelessNetwork {
         // The client handler class is only loaded when a payload actually arrives on the client.
         registrar.playToClient(ManaSyncPayload.TYPE, ManaSyncPayload.STREAM_CODEC,
                 (payload, context) -> ClientPayloadHandler.handleManaSync(payload));
+        registrar.playToClient(CostSettingsPayload.TYPE, CostSettingsPayload.STREAM_CODEC,
+                (payload, context) -> ClientPayloadHandler.handleCostSettings(payload));
+        registrar.playToClient(SpellCostOverridesPayload.TYPE, SpellCostOverridesPayload.STREAM_CODEC,
+                (payload, context) -> ClientPayloadHandler.handleSpellCosts(payload));
     }
 }

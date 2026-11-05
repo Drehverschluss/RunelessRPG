@@ -1,8 +1,14 @@
 package com.drehverschluss.runelessrpg.api;
 
+import com.drehverschluss.runelessrpg.cost.ManaCosts;
+import com.drehverschluss.runelessrpg.cost.SpellCostInfo;
 import com.drehverschluss.runelessrpg.mana.ManaManager;
+import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.spell_engine.api.spell.Spell;
+
+import java.util.OptionalDouble;
 
 /**
  * Public API of RunelessRPG for other mods and scripts.
@@ -15,7 +21,7 @@ import net.minecraft.world.entity.player.Player;
 public final class RunelessApi {
     private RunelessApi() {}
 
-    /** @return the current mana of the player */
+    /** @return the current mana of the player (may be negative after casting in a debt mode) */
     public static double getMana(Player player) {
         return ManaManager.getMana(player);
     }
@@ -48,5 +54,48 @@ public final class RunelessApi {
      */
     public static boolean trySpend(ServerPlayer player, double amount) {
         return ManaManager.trySpend(player, amount, ManaChangeEvent.Reason.API);
+    }
+
+    /** @return the cost category of the spell ({@link ManaCategory#NONE} = not handled, Spell Engine costs apply) */
+    public static ManaCategory getCategory(Player player, Holder<Spell> spell) {
+        return ManaCosts.resolve(player.level(), spell).category();
+    }
+
+    /**
+     * @return the base cost (tier table × category multiplier, or the datapack value) before player attributes,
+     *         or empty if the spell does not cost mana ({@link ManaCategory#NONE} or {@link ManaCategory#FREE})
+     */
+    public static OptionalDouble getBaseCost(Player player, Holder<Spell> spell) {
+        SpellCostInfo info = ManaCosts.resolve(player.level(), spell);
+        return info.costsMana() ? OptionalDouble.of(info.baseCost()) : OptionalDouble.empty();
+    }
+
+    /**
+     * Current total cost for this player: base cost × max(lower limit, {@code mana_cost}) × (1 + {@code overcharge}),
+     * after {@link ManaCostEvent}. For channeled spells this is the cost of the full channel duration.
+     * Creative players without costs still get the regular value here.
+     *
+     * @return the cost, or empty if the spell does not cost mana
+     */
+    public static OptionalDouble getCost(Player player, Holder<Spell> spell) {
+        SpellCostInfo info = ManaCosts.resolve(player.level(), spell);
+        return info.costsMana() ? OptionalDouble.of(ManaCosts.cost(player, spell, info)) : OptionalDouble.empty();
+    }
+
+    /** @return true if the spell is channeled (its cost is spread over the channel ticks in the DRAIN mode) */
+    public static boolean isChanneled(Holder<Spell> spell) {
+        return net.spell_engine.internals.SpellParameters.isChanneled(spell.value());
+    }
+
+    /**
+     * @return the cost of one channel tick ({@link #getCost} ÷ channel ticks), or empty if the spell is not channeled
+     *         or does not cost mana
+     */
+    public static OptionalDouble getCostPerChannelTick(Player player, Holder<Spell> spell) {
+        SpellCostInfo info = ManaCosts.resolve(player.level(), spell);
+        if (!info.costsMana() || !info.channeled()) {
+            return OptionalDouble.empty();
+        }
+        return OptionalDouble.of(ManaCosts.costPerChannelTick(player, spell, ManaCosts.cost(player, spell, info)));
     }
 }

@@ -1,0 +1,17 @@
+{
+  "values": [
+    { "id": "rpg_series:cleave", "required": false },
+    { "id": "rpg_series:fan_of_knives", "required": false },
+    { "id": "rpg_series:flurry", "required": false },
+    { "id": "rpg_series:ground_slam", "required": false },
+    { "id": "rpg_series:impale", "required": false },
+    { "id": "rpg_series:smash", "required": false },
+    { "id": "rpg_series:swift_strikes", "required": false },
+    { "id": "rpg_series:swipe", "required": false },
+    { "id": "rpg_series:thrust", "required": false },
+    { "id": "rpg_series:whirlwind", "required": false },
+    { "id": "mrpg_lib:burstcrack", "required": false },
+    { "id": "mrpg_lib:decapitate", "required": false },
+    { "id": "mrpg_lib:puncture", "required": false }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "values": [
+    { "id": "relics_rpgs:lesser_use_damage", "required": false },
+    { "id": "relics_rpgs:lesser_use_dex", "required": false },
+    { "id": "relics_rpgs:lesser_use_health", "required": false },
+    { "id": "relics_rpgs:lesser_use_ranged", "required": false },
+    { "id": "relics_rpgs:lesser_use_spell_haste", "required": false },
+    { "id": "relics_rpgs:lesser_use_spell_power", "required": false },
+    { "id": "relics_rpgs:medium_use_arcane_power", "required": false },
+    { "id": "relics_rpgs:medium_use_fire_power", "required": false },
+    { "id": "relics_rpgs:medium_use_frost_power", "required": false },
+    { "id": "relics_rpgs:medium_use_healing_power", "required": false },
+    { "id": "relics_rpgs:superior_use_area_attack_damage", "required": false },
+    { "id": "relics_rpgs:superior_use_area_defense_health", "required": false },
+    { "id": "relics_rpgs:superior_use_zone_healing_taken", "required": false },
+    { "id": "relics_rpgs:superior_use_zone_spell_power", "required": false },
+    { "id": "more_relics:lesser_use_rage_power", "required": false },
+    { "id": "more_relics:medium_use_air_power", "required": false },
+    { "id": "more_relics:medium_use_earth_power", "required": false },
+    { "id": "more_relics:medium_use_nature_power", "required": false },
+    { "id": "more_relics:medium_use_water_power", "required": false },
+    { "id": "more_relics:superior_mikaels_blessing", "required": false },
+    { "id": "more_relics:superior_shurelyas_battlesong", "required": false },
+    { "id": "more_relics:superior_zhonyas_hourglass", "required": false }
+  ]
+}
