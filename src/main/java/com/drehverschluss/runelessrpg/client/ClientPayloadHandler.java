@@ -1,5 +1,6 @@
 package com.drehverschluss.runelessrpg.client;
 
+import com.drehverschluss.runelessrpg.client.hud.ManaTextFade;
 import com.drehverschluss.runelessrpg.cost.CostSettings;
 import com.drehverschluss.runelessrpg.cost.SpellCostOverrides;
 import com.drehverschluss.runelessrpg.mana.ManaAttachments;
@@ -14,6 +15,9 @@ public final class ClientPayloadHandler {
 
     public static void handleManaSync(ManaSyncPayload payload) {
         ClientManaState.setMana(payload.mana());
+        if (payload.notable()) {
+            ManaTextFade.ping();
+        }
         LocalPlayer player = Minecraft.getInstance().player;
         if (player != null) {
             player.setData(ManaAttachments.MANA, payload.mana());

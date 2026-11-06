@@ -41,6 +41,11 @@ public final class ManaText {
     private static final double DIAMOND_OUTLINE_RADIUS = 19.0;
     /** Gap between the number and the bar (THIN / VERTICAL: above it, band: beside the tip), in bar pixels. */
     private static final double TEXT_GAP = 1.0;
+    /**
+     * Smallest automatic size of the Minecraft font: 2 screen pixels per font pixel (digits 14 screen pixels tall,
+     * like Minecraft's own text at GUI scale 2), or 1 at GUI scale 1.
+     */
+    private static final int MIN_SCREEN_PIXELS = 2;
 
     private boolean visible = true;
     private boolean attached = true;
@@ -152,8 +157,10 @@ public final class ManaText {
     }
 
     /**
-     * Sizes tried at the default place: pixel digits in whole GUI pixels (large, then small where it helps), or the
-     * Minecraft font from the bar's size down to half of it in whole screen pixels per font pixel.
+     * Sizes tried at the default place: pixel digits in whole GUI pixels (large, then small where it helps), then smaller
+     * in whole screen pixels; or the Minecraft font from the bar's size down to half of it in whole screen pixels per font
+     * pixel. Never below {@value #MIN_SCREEN_PIXELS} screen pixels per font pixel (readable on small screens and small
+     * Miki scales); if nothing fits, the number is hidden.
      */
     private static List<Candidate> candidates(boolean pixelFont, ManaBarStyle style, double barScale) {
         List<Candidate> list = new ArrayList<>();
@@ -165,11 +172,40 @@ public final class ManaText {
             if (style == ManaBarStyle.MIKI || style == ManaBarStyle.MIKI_DIAMOND) {
                 list.add(new Candidate(PixelFont.Size.SMALL, pixel));
             }
+            // Fallback below one GUI pixel (GUI scale 3+, small Miki scales): whole screen pixels, never below the minimum
+            double guiScale = guiScale();
+            for (int k = (int) Math.round(pixel * guiScale) - 1; k >= MIN_SCREEN_PIXELS; k--) {
+                if (style != ManaBarStyle.MIKI) {
+                    list.add(new Candidate(PixelFont.Size.LARGE, k / guiScale));
+                }
+                if (style == ManaBarStyle.MIKI || style == ManaBarStyle.MIKI_DIAMOND) {
+                    list.add(new Candidate(PixelFont.Size.SMALL, k / guiScale));
+                }
+            }
         } else {
             double guiScale = guiScale();
-            int largest = Math.max(1, (int) Math.floor(guiScale * barScale + 1.0E-6));
-            int smallest = Math.max(1, (int) Math.ceil(guiScale * barScale / 2.0));
+            int minimum = Math.min(MIN_SCREEN_PIXELS, Math.max(1, (int) Math.round(guiScale)));
+            int smallest = Math.max(minimum, (int) Math.ceil(guiScale * barScale / 2.0));
+            int largest = Math.max(smallest, (int) Math.floor(guiScale * barScale + 1.0E-6));
             for (int k = largest; k >= smallest; k--) {
+                list.add(new Candidate(PixelFont.Size.LARGE, k / guiScale));
+            }
+        }
+        return list;
+    }
+
+    /** THIN beside Miki's level box: from the thick bar's size down to the bar's normal size, largest first. */
+    private static List<Candidate> thinLevelCandidates(boolean pixelFont, ManaBar.Placement p) {
+        List<Candidate> list = new ArrayList<>();
+        if (pixelFont) {
+            for (long k = Math.max(1, Math.round(p.textScale())); k >= Math.max(1, Math.round(p.scale())); k--) {
+                list.add(new Candidate(PixelFont.Size.LARGE, k));
+            }
+        } else {
+            double guiScale = guiScale();
+            int smallest = Math.max(Math.min(MIN_SCREEN_PIXELS, Math.max(1, (int) Math.round(guiScale))),
+                    (int) Math.round(guiScale * p.scale()));
+            for (int k = Math.max(smallest, (int) Math.floor(guiScale * p.textScale() + 1.0E-6)); k >= smallest; k--) {
                 list.add(new Candidate(PixelFont.Size.LARGE, k / guiScale));
             }
         }
@@ -278,12 +314,19 @@ public final class ManaText {
         List<Candidate> candidates = candidates(pixelFont, style, p.textScale());
         switch (style) {
             case MIKI_DIAMOND -> {
+                // The size is chosen for the docked diamond and kept when the display is moved; the number then only
+                // moves with it and is hidden if the visible part of the diamond is too small for it.
                 for (TextMode m : modes) {
+                    String text = text(m, mana, max);
                     for (Candidate candidate : candidates) {
-                        Layout layout = fitInDiamond(text(m, mana, max), pixelFont, candidate, outline, bar, p, screenWidth, screenHeight);
+                        if (fitInDiamond(text, pixelFont, candidate, outline, bar, p, screenWidth, screenHeight, false) == null) {
+                            continue;
+                        }
+                        Layout layout = fitInDiamond(text, pixelFont, candidate, outline, bar, p, screenWidth, screenHeight, true);
                         if (layout != null) {
                             return layout;
                         }
+                        break;
                     }
                 }
                 return null;
@@ -309,6 +352,17 @@ public final class ManaText {
             default -> {
                 String text = text(mode, mana, max);
                 Candidate candidate = candidates.get(0);
+                if (style == ManaBarStyle.THIN && p.thickness() > 1.0) {
+                    // Thicker bar beside Miki's level box: the number grows with it, but never taller than the bar
+                    // (down to its normal size, which stays readable)
+                    double barHeight = p.height() * s;
+                    for (Candidate c : thinLevelCandidates(pixelFont, p)) {
+                        candidate = c;
+                        if (metrics(text, pixelFont, c.size(), outline).boxHeight() * c.scale() <= barHeight + 1.0E-6) {
+                            break;
+                        }
+                    }
+                }
                 Metrics metrics = metrics(text, pixelFont, candidate.size(), outline);
                 Reference ref = reference(screenWidth, screenHeight);
                 return layoutAt(text, pixelFont, candidate, ref.x() - ref.alignX() * metrics.boxWidth() * candidate.scale(),
@@ -319,13 +373,12 @@ public final class ManaText {
 
     /**
      * Finds a place for the number in the diamond: glyphs inside the fill, outline at most on the frame ring, and for
-     * the half diamond never on Miki's diamond. The place is chosen for the docked diamond (as close to the middle of
-     * the visible fill as fits) and then moved by the display's offset, so the number moves exactly with the diamond;
-     * if it no longer fits there, there is no place (smaller digits or hiding follow).
+     * the half diamond never on Miki's diamond. {@code moved = false}: for the docked diamond (decides the size);
+     * {@code moved = true}: for the diamond where it is now, as close to the middle of its visible fill as fits.
      */
     @Nullable
     private static Layout fitInDiamond(String text, boolean pixelFont, Candidate candidate, boolean outline, ManaBar bar,
-                                       ManaBar.Placement p, int screenWidth, int screenHeight) {
+                                       ManaBar.Placement p, int screenWidth, int screenHeight, boolean moved) {
         Metrics m = metrics(text, pixelFont, candidate.size(), outline);
         double f = candidate.scale();
         double width = m.boxWidth() * f;
@@ -334,22 +387,20 @@ public final class ManaText {
         double glyphWidth = m.glyphWidth() * f;
         double glyphHeight = m.glyphHeight() * f;
         double s = p.scale();
-        double offsetX = bar.atMikiDiamond() ? bar.getOffsetX() : 0;
-        double offsetY = bar.atMikiDiamond() ? bar.getOffsetY() : 0;
-        double centerX = p.x() + p.width() * s / 2.0;
-        double centerY = p.y() + p.height() * s / 2.0;
-        double dockedX = centerX - offsetX;
-        double dockedY = centerY - offsetY;
+        double offsetX = bar.atMikiDiamond() && !moved ? bar.getOffsetX() : 0;
+        double offsetY = bar.atMikiDiamond() && !moved ? bar.getOffsetY() : 0;
+        double centerX = p.x() + p.width() * s / 2.0 - offsetX;
+        double centerY = p.y() + p.height() * s / 2.0 - offsetY;
         double inner = DIAMOND_INSIDE_RADIUS * s;
         double outer = DIAMOND_OUTLINE_RADIUS * s;
         double[] frame = bar.atMikiDiamond() ? mikiFrame(bar, screenWidth, screenHeight) : null;
         double preferred = preferredDiamondX(bar, p, screenWidth, screenHeight) - offsetX;
         double step = 1.0 / guiScale();
-        double y = snap(dockedY - glyphHeight / 2.0) - pad;
+        double y = snap(centerY - glyphHeight / 2.0) - pad;
         double best = Double.NaN;
         double bestDistance = Double.MAX_VALUE;
-        for (double x = snap(dockedX - outer - width); x <= dockedX + outer; x += step) {
-            if (!fits(x, y, width, height, pad, glyphWidth, glyphHeight, dockedX, dockedY, inner, outer, frame)) {
+        for (double x = snap(centerX - outer - width); x <= centerX + outer; x += step) {
+            if (!fits(x, y, width, height, pad, glyphWidth, glyphHeight, centerX, centerY, inner, outer, frame)) {
                 continue;
             }
             double distance = Math.abs(x + pad + glyphWidth / 2.0 - preferred);
@@ -361,12 +412,7 @@ public final class ManaText {
         if (Double.isNaN(best)) {
             return null;
         }
-        double x = best + offsetX;
-        double movedY = y + offsetY;
-        if (!fits(x, movedY, width, height, pad, glyphWidth, glyphHeight, centerX, centerY, inner, outer, frame)) {
-            return null;
-        }
-        return layoutAt(text, pixelFont, candidate, x, movedY, outline);
+        return layoutAt(text, pixelFont, candidate, best, y, outline);
     }
 
     /** Center x, center y and radius of Miki's diamond on the anchor's side. */

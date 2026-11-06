@@ -47,13 +47,6 @@ public final class ManaBar {
         public boolean contains(double px, double py) {
             return px >= x && px < x + width && py >= y && py < y + height;
         }
-
-        Bounds union(Bounds other) {
-            int minX = Math.min(x, other.x);
-            int minY = Math.min(y, other.y);
-            return new Bounds(minX, minY, Math.max(x + width, other.x + other.width) - minX,
-                    Math.max(y + height, other.y + other.height) - minY);
-        }
     }
 
     /**
@@ -571,10 +564,6 @@ public final class ManaBar {
 
     public HudAnchor getAnchor() {
         return anchor;
-    }
-
-    public void setAnchor(HudAnchor anchor) {
-        this.anchor = anchor;
     }
 
     public int getOffsetX() {

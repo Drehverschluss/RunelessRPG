@@ -3,6 +3,9 @@
         {
             "type": "neoforge:mod_loaded",
             "modid": "apotheosis"
+        },
+        {
+            "type": "runelessrpg:apotheosis_integration"
         }
     ],
     "type": "runelessrpg:attribute",

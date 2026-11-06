@@ -125,7 +125,8 @@ public final class RunelessClientConfig {
         TEXT_OUTLINE = builder.comment("Dark 1 px outline around the number (otherwise a drop shadow)").define("textOutline", true);
         TEXT_VISIBILITY = builder
                 .comment("ALWAYS = number always shown,",
-                        "ON_CHANGE = number shown for 2 s after mana was spent, after \"Missing Mana\" and while channeling")
+                        "ON_CHANGE = number shown for 2 s after a notable change (spell cost, potion, leech, command, respawn, max mana)",
+                                "            and after \"Missing Mana\"; regeneration and channel ticks do not show it")
                 .defineEnum("textVisibility", TextVisibility.ALWAYS);
         builder.pop();
 

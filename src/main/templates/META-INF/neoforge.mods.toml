@@ -9,6 +9,7 @@ version="${mod_version}"
 displayName="${mod_name}"
 displayURL="https://github.com/Drehverschluss/RunelessRPG"
 authors="${mod_authors}"
+credits="Mana item texture from RPGMana by cleannrooster (CC0). Attribute icons by Clockwork Raven Studios (RPG Icon Pack)."
 description='''${mod_description}'''
 
 [[dependencies.${mod_id}]]
@@ -26,6 +27,7 @@ description='''${mod_description}'''
     side="BOTH"
 
 [[dependencies.${mod_id}]]
+    # Spell Engine pulls in Spell Power, Cloth Config and playerAnimator as its own required dependencies
     modId="spell_engine"
     type="required"
     versionRange="${spell_engine_version_range}"

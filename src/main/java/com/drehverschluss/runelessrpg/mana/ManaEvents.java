@@ -43,11 +43,12 @@ public final class ManaEvents {
         }
     }
 
+    // Equipment modifiers (e.g. max mana on armor) are not saved; Minecraft applies them again on the player's first tick.
+    // So login and respawn never clamp or refill right away: onPlayerTick does it after the equipment update.
     private static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             applyBaseValues(player);
             ManaManager.initializeIfMissing(player);
-            ManaManager.clampToMax(player);
             ManaManager.sync(player);
         }
     }
@@ -63,9 +64,8 @@ public final class ManaEvents {
         if (event.getEntity() instanceof ServerPlayer player) {
             applyBaseValues(player);
             if (!event.isEndConquered()) {
-                ManaManager.setMana(player, ManaManager.getMaxMana(player), ManaChangeEvent.Reason.RESPAWN);
+                player.getData(ManaAttachments.SYNC_STATE).refillPending = true;
             }
-            ManaManager.clampToMax(player);
             ManaManager.sync(player);
         }
     }
@@ -80,6 +80,11 @@ public final class ManaEvents {
 
     private static void onPlayerTick(PlayerTickEvent.Post event) {
         if (event.getEntity() instanceof ServerPlayer player && player.isAlive()) {
+            ManaAttachments.ManaSyncState state = player.getData(ManaAttachments.SYNC_STATE);
+            if (state.refillPending) {
+                state.refillPending = false;
+                ManaManager.setMana(player, ManaManager.getMaxMana(player), ManaChangeEvent.Reason.RESPAWN);
+            }
             ManaManager.clampToMax(player);
             if (!player.isSpectator()) {
                 ManaManager.tickRegeneration(player);

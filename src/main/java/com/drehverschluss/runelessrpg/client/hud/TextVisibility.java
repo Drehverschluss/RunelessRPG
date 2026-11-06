@@ -4,6 +4,6 @@ package com.drehverschluss.runelessrpg.client.hud;
 public enum TextVisibility {
     /** Always. */
     ALWAYS,
-    /** Briefly after mana was spent, after "Missing Mana" and while channeling. */
+    /** Briefly after a notable change (spell cost, potion, leech, command, respawn, max mana) and after "Missing Mana". */
     ON_CHANGE
 }

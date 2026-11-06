@@ -2,6 +2,7 @@ package com.drehverschluss.runelessrpg;
 
 import com.drehverschluss.runelessrpg.attribute.RunelessAttributes;
 import com.drehverschluss.runelessrpg.command.RunelessCommands;
+import com.drehverschluss.runelessrpg.compat.ApotheosisIntegration;
 import com.drehverschluss.runelessrpg.compat.apotheosis.ApotheosisCompat;
 import com.drehverschluss.runelessrpg.config.RunelessCommonConfig;
 import com.drehverschluss.runelessrpg.config.RunelessServerConfig;
@@ -45,11 +46,17 @@ public class RunelessRPG {
         CostEvents.register(modEventBus);
         ManaLeech.register();
         Overcharge.register();
+        ApotheosisIntegration.register(modEventBus);
         if (ModList.get().isLoaded("apotheosis")) {
-            ApotheosisCompat.init(modEventBus);
+            try {
+                ApotheosisCompat.init(modEventBus);
+            } catch (Exception | LinkageError e) {
+                ApotheosisIntegration.disable(e);
+            }
         }
         modEventBus.addListener(RunelessRPG::onAddPackFinders);
         NeoForge.EVENT_BUS.addListener(RunelessCommands::onRegisterCommands);
+        LOGGER.info("RunelessRPG {} loaded", modContainer.getModInfo().getVersion());
     }
 
     /**

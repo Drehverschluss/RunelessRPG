@@ -99,15 +99,13 @@ public final class SpellCostOverrides {
         protected void apply(Map<ResourceLocation, Double> values, ResourceManager manager, ProfilerFiller profiler) {
             Map<ResourceLocation, Double> known = new HashMap<>();
             Optional<Registry<Spell>> registry = registryAccess.registry(SpellRegistry.KEY);
+            // Entries for spells that are not installed are skipped silently (packs list spells of optional mods)
             values.forEach((id, value) -> {
                 if (registry.isEmpty() || registry.get().containsKey(id)) {
                     known.put(id, value);
-                } else {
-                    RunelessRPG.LOGGER.debug("Skipping spell cost for unknown spell {}", id);
                 }
             });
             serverValues = Map.copyOf(known);
-            RunelessRPG.LOGGER.info("Loaded {} spell cost overrides", known.size());
         }
     }
 }

@@ -75,8 +75,6 @@ public final class BorrowedPower {
             if (damage > 0.0) {
                 DamageSource source = new DamageSource(player.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE)
                         .getHolderOrThrow(RunelessPotions.MANA_BACKLASH));
-                RunelessRPG.LOGGER.debug("Borrowed Power backlash for {}: mana {} -> {} damage", player.getName().getString(),
-                        ManaManager.getMana(player), damage);
                 player.hurt(source, (float) damage);
             }
         }

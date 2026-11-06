@@ -41,7 +41,7 @@ public final class ManaManager {
         }
         player.setData(ManaAttachments.MANA, clamped);
         NeoForge.EVENT_BUS.post(new ManaChangeEvent(player, old, clamped, reason));
-        sync(player);
+        sync(player, reason != ManaChangeEvent.Reason.REGEN);
     }
 
     public static void addMana(ServerPlayer player, double amount, ManaChangeEvent.Reason reason) {
@@ -76,13 +76,18 @@ public final class ManaManager {
         double next = Math.min(old + amount, max);
         player.setData(ManaAttachments.MANA, next);
         NeoForge.EVENT_BUS.post(new ManaChangeEvent(player, old, next, reason));
-        sync(player);
+        sync(player, true);
     }
 
     /**
      * Removes mana for a spell. With {@code allowDebt} the result may become negative (DEBT modes), otherwise it stops at 0.
      */
     public static void spendForSpell(ServerPlayer player, double amount, boolean allowDebt) {
+        spendForSpell(player, amount, allowDebt, true);
+    }
+
+    /** {@code notable} = false for DRAIN channel ticks (they do not show the number for {@code ON_CHANGE}). */
+    public static void spendForSpell(ServerPlayer player, double amount, boolean allowDebt, boolean notable) {
         double old = getMana(player);
         double next = Math.min(old - amount, getMaxMana(player));
         if (!allowDebt) {
@@ -96,7 +101,7 @@ public final class ManaManager {
         }
         player.setData(ManaAttachments.MANA, next);
         NeoForge.EVENT_BUS.post(new ManaChangeEvent(player, old, next, ManaChangeEvent.Reason.SPELL));
-        sync(player);
+        sync(player, notable);
     }
 
     /** Fills a player that has never stored mana before. Returns true if the player was new. */
@@ -141,14 +146,19 @@ public final class ManaManager {
         boolean boundary = next == max || next == 0.0;
         if (Double.isNaN(last) || Math.abs(next - last) >= REGEN_SYNC_STEP || (boundary && next != last)) {
             NeoForge.EVENT_BUS.post(new ManaChangeEvent(player, Double.isNaN(last) ? current : last, next, ManaChangeEvent.Reason.REGEN));
-            sync(player);
+            sync(player, false);
         }
     }
 
+    /** Sends the current mana without marking it as a visible change (login, dimension change, respawn resync). */
     public static void sync(ServerPlayer player) {
+        sync(player, false);
+    }
+
+    private static void sync(ServerPlayer player, boolean notable) {
         double mana = getMana(player);
         player.getData(ManaAttachments.SYNC_STATE).lastSynced = mana;
-        PacketDistributor.sendToPlayer(player, new ManaSyncPayload(mana));
+        PacketDistributor.sendToPlayer(player, new ManaSyncPayload(mana, notable));
     }
 
     private static double clamp(double value, double max) {

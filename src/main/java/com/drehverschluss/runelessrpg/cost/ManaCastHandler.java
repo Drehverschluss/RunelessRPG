@@ -75,7 +75,10 @@ public final class ManaCastHandler {
             return;
         }
         double total = ManaCosts.cost(player, holder, info);
-        spend(player, ManaCosts.costPerChannelTick(player, holder, total), settings);
+        double perTick = ManaCosts.costPerChannelTick(player, holder, total);
+        if (perTick > 0.0) {
+            ManaManager.spendForSpell(player, perTick, ManaCosts.allowsDebt(player, settings), false);
+        }
     }
 
     /** A cast with a duration has started on the server (process created). */

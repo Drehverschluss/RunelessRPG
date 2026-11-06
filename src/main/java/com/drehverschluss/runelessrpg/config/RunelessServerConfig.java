@@ -120,19 +120,19 @@ public final class RunelessServerConfig {
         SPELLS_ENABLED = builder
                 .comment("Spells that cost runes, plus everything in #runelessrpg:cost/spells")
                 .define("spellsEnabled", true);
-        SPELLS_MULTIPLIER = builder.defineInRange("spellsMultiplier", 1.0, 0.0, 1000.0);
+        SPELLS_MULTIPLIER = builder.comment("Multiplier for the tier cost of spells").defineInRange("spellsMultiplier", 1.0, 0.0, 1000.0);
         CLASS_SKILLS_ENABLED = builder
                 .comment("Class skills in #runelessrpg:cost/class_skills")
                 .define("classSkillsEnabled", true);
-        CLASS_SKILLS_MULTIPLIER = builder.defineInRange("classSkillsMultiplier", 0.75, 0.0, 1000.0);
+        CLASS_SKILLS_MULTIPLIER = builder.comment("Multiplier for the tier cost of class skills").defineInRange("classSkillsMultiplier", 0.75, 0.0, 1000.0);
         WEAPON_SKILLS_ENABLED = builder
                 .comment("Weapon skills in #runelessrpg:cost/weapon_skills")
                 .define("weaponSkillsEnabled", true);
-        WEAPON_SKILLS_MULTIPLIER = builder.defineInRange("weaponSkillsMultiplier", 0.5, 0.0, 1000.0);
+        WEAPON_SKILLS_MULTIPLIER = builder.comment("Multiplier for the tier cost of weapon skills").defineInRange("weaponSkillsMultiplier", 0.5, 0.0, 1000.0);
         ITEM_ABILITIES_ENABLED = builder
                 .comment("Item abilities in #runelessrpg:cost/item_abilities")
                 .define("itemAbilitiesEnabled", false);
-        ITEM_ABILITIES_MULTIPLIER = builder.defineInRange("itemAbilitiesMultiplier", 1.0, 0.0, 1000.0);
+        ITEM_ABILITIES_MULTIPLIER = builder.comment("Multiplier for the tier cost of item abilities").defineInRange("itemAbilitiesMultiplier", 1.0, 0.0, 1000.0);
         builder.pop();
 
         builder.comment("Channeled spells").push("channel");

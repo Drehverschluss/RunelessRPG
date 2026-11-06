@@ -18,7 +18,7 @@ public final class ManaAttachments {
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<Double>> MANA = ATTACHMENTS.register("mana",
             () -> AttachmentType.builder(() -> 0.0).serialize(Codec.DOUBLE).build());
 
-    /** Runtime-only sync bookkeeping, never saved. */
+    /** Runtime-only bookkeeping (sync, pending respawn refill), never saved. */
     public static final Supplier<AttachmentType<ManaSyncState>> SYNC_STATE = ATTACHMENTS.register("mana_sync_state",
             () -> AttachmentType.builder(ManaSyncState::new).build());
 
@@ -46,5 +46,7 @@ public final class ManaAttachments {
     public static final class ManaSyncState {
         /** Value last sent to the client; NaN if nothing was sent yet. */
         public double lastSynced = Double.NaN;
+        /** Respawned: refill to max mana on the first tick, once equipment modifiers are applied again. */
+        public boolean refillPending;
     }
 }
