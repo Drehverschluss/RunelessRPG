@@ -32,6 +32,7 @@ public final class RunelessClientConfig {
     public static final ModConfigSpec.EnumValue<TextMode> TEXT_MODE;
     public static final ModConfigSpec.EnumValue<TextFont> TEXT_FONT;
     public static final ModConfigSpec.BooleanValue ANIMATED_FILL;
+    public static final ModConfigSpec.DoubleValue ANIMATION_SPEED;
     public static final ModConfigSpec.BooleanValue TEXT_OUTLINE;
     public static final ModConfigSpec.EnumValue<TextVisibility> TEXT_VISIBILITY;
     public static final ModConfigSpec.IntValue BAND_WIDTH;
@@ -69,7 +70,10 @@ public final class RunelessClientConfig {
         OFFSET_Y = builder
                 .comment("Vertical offset from the anchor in GUI pixels (positive = down)")
                 .defineInRange("offsetY", 0, -MAX_OFFSET, MAX_OFFSET);
-        SCALE = builder.comment("Scale of the bar").defineInRange("scale", 1.0, ManaBar.MIN_SCALE, ManaBar.MAX_SCALE);
+        SCALE = builder
+                .comment("Scale of the bar. At MIKI_LEVEL_LEFT / MIKI_LEVEL_RIGHT the MIKI and THIN bars keep their length",
+                        "(level box to diamond) and only get thicker, up to 2.5")
+                .defineInRange("scale", 1.0, ManaBar.MIN_SCALE, ManaBar.MAX_SCALE);
         STYLE = builder
                 .comment("AUTO = MIKI_DIAMOND with Miki's HUD, otherwise THIN",
                         "THIN = narrow like the experience bar, MIKI = framed to match Miki's HUD, VERTICAL = upright, fills from the bottom",
@@ -81,6 +85,9 @@ public final class RunelessClientConfig {
         ANIMATED_FILL = builder
                 .comment("Slowly moving and shimmering fill texture (MIKI_DIAMOND, MIKI_BAND, MIKI); false = still texture")
                 .define("animatedFill", true);
+        ANIMATION_SPEED = builder
+                .comment("Speed factor of the moving fill texture (two layers drifting slowly in different directions)")
+                .defineInRange("animationSpeed", 1.0, 0.1, 3.0);
         FILL_COLOR = builder.comment("Fill color (#RRGGBB)").define("fillColor", "#3A7BFF", RunelessClientConfig::isColor);
         DEBT_COLOR = builder.comment("Color of negative mana (debt), #RRGGBB").define("debtColor", "#B02020", RunelessClientConfig::isColor);
         DRAW_BEHIND_MIKI_HUD = builder

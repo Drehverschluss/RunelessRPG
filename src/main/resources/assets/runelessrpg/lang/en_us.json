@@ -77,6 +77,7 @@
   "runelessrpg.configuration.textMode": "Text",
   "runelessrpg.configuration.textFont": "Text Font",
   "runelessrpg.configuration.animatedFill": "Animated Fill",
+  "runelessrpg.configuration.animationSpeed": "Fill Animation Speed",
   "runelessrpg.configuration.textOutline": "Text Outline",
   "runelessrpg.configuration.textVisibility": "Show Text",
   "runelessrpg.configuration.bandWidth": "Band Width",

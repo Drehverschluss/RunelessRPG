@@ -22,6 +22,11 @@ public final class ManaBar {
 
     /** A Miki anchor is kept while dragging as long as the bar stays this close to the docking position. */
     public static final int MIKI_KEEP_DISTANCE = 48;
+    /**
+     * Largest scale (thickness) of the bars at the level anchors: a MIKI bar is then 25 px thick and ends 6 px below
+     * the top of Miki's diamonds.
+     */
+    public static final float MAX_LEVEL_SCALE = 2.5F;
     /** Dragging a bar this close to a docking position docks it at Miki again. */
     private static final int MIKI_SNAP_DISTANCE = 4;
     private static final long FILL_GLIDE_NANOS = 100_000_000L;
@@ -51,8 +56,20 @@ public final class ManaBar {
         }
     }
 
-    /** Exact position of the display: top left corner, scale and unscaled size. */
-    record Placement(double x, double y, double scale, int width, int height) {}
+    /**
+     * Exact position of the display: top left corner, scale and unscaled size. {@code thickness} = how much thicker
+     * than normal the bar is drawn (bars at the level anchors grow only in height, see {@link #placement}).
+     */
+    record Placement(double x, double y, double scale, int width, int height, double thickness) {
+        Placement(double x, double y, double scale, int width, int height) {
+            this(x, y, scale, width, height, 1.0);
+        }
+
+        /** Scale for the number of the bar: the bar's scale times its extra thickness. */
+        double textScale() {
+            return scale * thickness;
+        }
+    }
 
     /** What a GUI layer draws: everything, only the shape or only the number. */
     public enum Pass { ALL, SHAPE, TEXT }
@@ -194,10 +211,36 @@ public final class ManaBar {
         return new double[]{x, y};
     }
 
+    /** MIKI / THIN bar beside Miki's level box: fixed length up to the diamonds, the own scale only makes it thicker. */
+    private boolean atMikiLevel(ManaBarStyle style) {
+        return (style == ManaBarStyle.THIN || style == ManaBarStyle.MIKI) && anchor.isMikiLevel() && MikiCompat.isActive();
+    }
+
+    /**
+     * Bar beside the level box: the length stays from the level box to just before the diamond, the own scale (up to
+     * {@value #MAX_LEVEL_SCALE}) only changes the thickness in whole pixels. The bottom edge stays on Miki's vine band,
+     * the bar grows upwards (never into the hotbar). Scaled with Miki's HUD like the other Miki anchors.
+     */
+    private Placement levelBarPlacement(ManaBarStyle style, int screenWidth, int screenHeight) {
+        boolean right = anchor.isMikiRight();
+        MikiCompat.Dock dock = MikiCompat.levelDock(right, screenWidth, screenHeight);
+        double s = dock.scale();
+        int width = widthFor(style);
+        int baseHeight = naturalHeight(style);
+        int height = Math.max(baseHeight, (int) Math.round(baseHeight * Math.min(scale, MAX_LEVEL_SCALE)));
+        double bottom = dock.y() + baseHeight * s / 2.0;
+        double x = right ? dock.x() : dock.x() - width * s;
+        double y = bottom - height * s;
+        return new Placement(Math.round(x) + offsetX, Math.round(y) + offsetY, s, width, height, height / (double) baseHeight);
+    }
+
     Placement placement(int screenWidth, int screenHeight) {
         ManaBarStyle style = effectiveStyle();
         if (isShape(style) && atMikiDiamond()) {
             return mikiShapePlacement(style, screenWidth, screenHeight);
+        }
+        if (atMikiLevel(style)) {
+            return levelBarPlacement(style, screenWidth, screenHeight);
         }
         double s = effectiveScale(screenWidth, screenHeight);
         int naturalWidth = widthFor(style);

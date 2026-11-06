@@ -244,22 +244,27 @@ public final class ManaText {
         }
     }
 
-    /** Middle of the visible fill of the diamond on its center row (beside Miki's diamond for the half diamond). */
+    /**
+     * Middle of the visible fill of the diamond on its center row (beside Miki's diamond for the half diamond). It is
+     * computed for the docked position and then moved by the display's offset, so the number moves exactly with it.
+     */
     private static double preferredDiamondX(ManaBar bar, ManaBar.Placement p, int screenWidth, int screenHeight) {
         double s = p.scale();
         double centerX = p.x() + p.width() * s / 2.0;
-        double centerY = p.y() + p.height() * s / 2.0;
         if (!bar.atMikiDiamond()) {
             return centerX;
         }
+        double dockedX = centerX - bar.getOffsetX();
+        double dockedY = p.y() + p.height() * s / 2.0 - bar.getOffsetY();
         double inner = DIAMOND_INSIDE_RADIUS * s;
         double mikiScale = MikiCompat.scale(screenWidth);
         boolean right = bar.getAnchor().isMikiRight();
         double frameX = screenWidth / 2 + (right ? 1 : -1) * MikiCompat.FRAME_CENTER_X * mikiScale;
         double frameY = screenHeight + MikiCompat.FRAME_CENTER_Y * mikiScale;
-        double frameEdge = MikiCompat.FRAME_RADIUS * mikiScale - Math.abs(centerY - frameY);
-        return right ? (Math.max(centerX - inner, frameX + frameEdge) + centerX + inner) / 2.0
-                : (centerX - inner + Math.min(centerX + inner, frameX - frameEdge)) / 2.0;
+        double frameEdge = MikiCompat.FRAME_RADIUS * mikiScale - Math.abs(dockedY - frameY);
+        double docked = right ? (Math.max(dockedX - inner, frameX + frameEdge) + dockedX + inner) / 2.0
+                : (dockedX - inner + Math.min(dockedX + inner, frameX - frameEdge)) / 2.0;
+        return docked + bar.getOffsetX();
     }
 
     /** The number fitted to the default place of the style (see class comment). */
@@ -270,7 +275,7 @@ public final class ManaText {
         double s = p.scale();
         ManaBarStyle style = bar.effectiveStyle();
         TextMode[] modes = mode == TextMode.CURRENT ? new TextMode[]{mode} : new TextMode[]{mode, TextMode.CURRENT};
-        List<Candidate> candidates = candidates(pixelFont, style, s);
+        List<Candidate> candidates = candidates(pixelFont, style, p.textScale());
         switch (style) {
             case MIKI_DIAMOND -> {
                 for (TextMode m : modes) {
@@ -314,7 +319,9 @@ public final class ManaText {
 
     /**
      * Finds a place for the number in the diamond: glyphs inside the fill, outline at most on the frame ring, and for
-     * the half diamond never on Miki's diamond. Prefers the middle of the visible fill.
+     * the half diamond never on Miki's diamond. The place is chosen for the docked diamond (as close to the middle of
+     * the visible fill as fits) and then moved by the display's offset, so the number moves exactly with the diamond;
+     * if it no longer fits there, there is no place (smaller digits or hiding follow).
      */
     @Nullable
     private static Layout fitInDiamond(String text, boolean pixelFont, Candidate candidate, boolean outline, ManaBar bar,
@@ -327,40 +334,57 @@ public final class ManaText {
         double glyphWidth = m.glyphWidth() * f;
         double glyphHeight = m.glyphHeight() * f;
         double s = p.scale();
+        double offsetX = bar.atMikiDiamond() ? bar.getOffsetX() : 0;
+        double offsetY = bar.atMikiDiamond() ? bar.getOffsetY() : 0;
         double centerX = p.x() + p.width() * s / 2.0;
         double centerY = p.y() + p.height() * s / 2.0;
+        double dockedX = centerX - offsetX;
+        double dockedY = centerY - offsetY;
         double inner = DIAMOND_INSIDE_RADIUS * s;
         double outer = DIAMOND_OUTLINE_RADIUS * s;
-        boolean half = bar.atMikiDiamond();
-        double frameX = 0;
-        double frameY = 0;
-        double frameRadius = 0;
-        if (half) {
-            double mikiScale = MikiCompat.scale(screenWidth);
-            frameX = screenWidth / 2 + (bar.getAnchor().isMikiRight() ? 1 : -1) * MikiCompat.FRAME_CENTER_X * mikiScale;
-            frameY = screenHeight + MikiCompat.FRAME_CENTER_Y * mikiScale;
-            frameRadius = MikiCompat.FRAME_RADIUS * mikiScale;
-        }
-        double preferred = preferredDiamondX(bar, p, screenWidth, screenHeight);
+        double[] frame = bar.atMikiDiamond() ? mikiFrame(bar, screenWidth, screenHeight) : null;
+        double preferred = preferredDiamondX(bar, p, screenWidth, screenHeight) - offsetX;
         double step = 1.0 / guiScale();
-        double y = snap(centerY - glyphHeight / 2.0) - pad;
+        double y = snap(dockedY - glyphHeight / 2.0) - pad;
         double best = Double.NaN;
         double bestDistance = Double.MAX_VALUE;
-        for (double x = snap(centerX - outer - width); x <= centerX + outer; x += step) {
-            double glyphX = x + pad;
-            double glyphY = y + pad;
-            if (maxDistance(glyphX, glyphX + glyphWidth, glyphY, glyphY + glyphHeight, centerX, centerY) > inner + 1.0E-6
-                    || maxDistance(x, x + width, y, y + height, centerX, centerY) > outer + 1.0E-6
-                    || half && minDistance(x, x + width, y, y + height, frameX, frameY) < frameRadius - 1.0E-6) {
+        for (double x = snap(dockedX - outer - width); x <= dockedX + outer; x += step) {
+            if (!fits(x, y, width, height, pad, glyphWidth, glyphHeight, dockedX, dockedY, inner, outer, frame)) {
                 continue;
             }
-            double distance = Math.abs(glyphX + glyphWidth / 2.0 - preferred);
+            double distance = Math.abs(x + pad + glyphWidth / 2.0 - preferred);
             if (distance < bestDistance) {
                 bestDistance = distance;
                 best = x;
             }
         }
-        return Double.isNaN(best) ? null : layoutAt(text, pixelFont, candidate, best, y, outline);
+        if (Double.isNaN(best)) {
+            return null;
+        }
+        double x = best + offsetX;
+        double movedY = y + offsetY;
+        if (!fits(x, movedY, width, height, pad, glyphWidth, glyphHeight, centerX, centerY, inner, outer, frame)) {
+            return null;
+        }
+        return layoutAt(text, pixelFont, candidate, x, movedY, outline);
+    }
+
+    /** Center x, center y and radius of Miki's diamond on the anchor's side. */
+    private static double[] mikiFrame(ManaBar bar, int screenWidth, int screenHeight) {
+        double mikiScale = MikiCompat.scale(screenWidth);
+        return new double[]{
+                screenWidth / 2 + (bar.getAnchor().isMikiRight() ? 1 : -1) * MikiCompat.FRAME_CENTER_X * mikiScale,
+                screenHeight + MikiCompat.FRAME_CENTER_Y * mikiScale,
+                MikiCompat.FRAME_RADIUS * mikiScale};
+    }
+
+    private static boolean fits(double x, double y, double width, double height, double pad, double glyphWidth, double glyphHeight,
+                                double centerX, double centerY, double inner, double outer, @Nullable double[] frame) {
+        double glyphX = x + pad;
+        double glyphY = y + pad;
+        return maxDistance(glyphX, glyphX + glyphWidth, glyphY, glyphY + glyphHeight, centerX, centerY) <= inner + 1.0E-6
+                && maxDistance(x, x + width, y, y + height, centerX, centerY) <= outer + 1.0E-6
+                && (frame == null || minDistance(x, x + width, y, y + height, frame[0], frame[1]) >= frame[2] - 1.0E-6);
     }
 
     /** Largest Manhattan distance of a box corner from a point (box inside a diamond if at most its radius). */

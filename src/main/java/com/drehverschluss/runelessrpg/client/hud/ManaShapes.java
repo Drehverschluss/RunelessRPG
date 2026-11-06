@@ -1,6 +1,7 @@
 package com.drehverschluss.runelessrpg.client.hud;
 
 import com.drehverschluss.runelessrpg.RunelessRPG;
+import com.drehverschluss.runelessrpg.client.config.RunelessClientConfig;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.Util;
@@ -56,9 +57,15 @@ public final class ManaShapes {
 
     private static final ResourceLocation FILL_TEXTURE = ResourceLocation.fromNamespaceAndPath(RunelessRPG.MODID, "textures/gui/mana_fill.png");
     private static final int TEXTURE_SIZE = 32;
-    /** Movement of the fill texture in pixels per second (to the left and upwards). */
-    private static final double DRIFT_X = 1.0;
-    private static final double DRIFT_Y = 2.5;
+    /** Drift of the two texture layers in texels per second (at animationSpeed 1): A to the upper right, B to the upper left. */
+    private static final double LAYER_A_X = 0.45;
+    private static final double LAYER_A_Y = 0.35;
+    private static final double LAYER_B_X = 0.30;
+    private static final double LAYER_B_Y = 0.50;
+    /** Contrast stretch after mixing the two layers. */
+    private static final float MIX_CONTRAST = 1.4F;
+    /** Strength of the soft shimmer wave over the fill. */
+    private static final float SHIMMER = 0.03F;
 
     private static Shape diamondRight;
     private static Shape diamondLeft;
@@ -66,6 +73,7 @@ public final class ManaShapes {
     private static final Map<Integer, Shape> BARS = new HashMap<>();
     private static final Map<Shape, Canvas> CANVASES = new IdentityHashMap<>();
     private static float[] fillTexture;
+    private static float textureMean = 0.5F;
     private static int canvasCount;
 
     private ManaShapes() {}
@@ -348,9 +356,15 @@ public final class ManaShapes {
             return;
         }
         float[] texture = fillTexture();
-        double time = animated ? Util.getMillis() / 1000.0 : 0.0;
-        int shiftX = (int) Math.floor(time * DRIFT_X);
-        int shiftY = (int) Math.floor(time * DRIFT_Y);
+        double time = animated ? Util.getNanos() / 1.0E9 * RunelessClientConfig.ANIMATION_SPEED.get() : 0.0;
+        // Two layers of the texture drifting in different directions, sampled at fractional positions (bilinear),
+        // so the brightness changes smoothly instead of jumping by whole texels. Layer B is transposed and shifted,
+        // so the two layers never line up.
+        double ax = -LAYER_A_X * time;
+        double ay = LAYER_A_Y * time;
+        double bx = LAYER_B_X * time + 13.7;
+        double by = LAYER_B_Y * time + 7.3;
+        float weight = (float) (0.5 + 0.2 * Math.sin(time * 0.5));
 
         boolean inDebt = debt > 0.0;
         int color = inDebt ? debtColor : fillColor;
@@ -371,14 +385,23 @@ public final class ManaShapes {
                 } else if (kind != INSIDE) {
                     argb = PALETTE[kind];
                 } else {
-                    float t = texture[((y + shiftY) & (TEXTURE_SIZE - 1)) * TEXTURE_SIZE + ((x + shiftX) & (TEXTURE_SIZE - 1))];
+                    float still = texture[(y & (TEXTURE_SIZE - 1)) * TEXTURE_SIZE + (x & (TEXTURE_SIZE - 1))];
+                    float t;
+                    if (animated) {
+                        float a = sample(texture, x + ax, y + ay);
+                        float b = sample(texture, y + by, x + bx);
+                        // Averaging two layers flattens the contrast; stretch it back around the mean
+                        t = Mth.clamp(textureMean + ((weight * a + (1 - weight) * b) - textureMean) * MIX_CONTRAST, 0.0F, 1.0F);
+                    } else {
+                        t = still;
+                    }
                     boolean isFilled = shape.horizontalFill ? x <= lastFilled : y >= firstFilled;
                     if (isFilled) {
                         float factor = 0.55F + 0.7F * t;
                         // Slightly lighter at the top, darker at the bottom
                         factor *= 1.08F - 0.2F * (y / (float) Math.max(1, shape.height - 1));
                         if (animated) {
-                            factor *= 1.0F + 0.06F * (float) Math.sin(time * 2.0 + (x - y) * 0.35);
+                            factor *= 1.0F + SHIMMER * (float) Math.sin(time * 1.2 + (x - y) * 0.35);
                         }
                         argb = scale(color, factor);
                         boolean surface = shape.horizontalFill ? x == lastFilled && filled < steps : y == firstFilled && filled < steps;
@@ -386,7 +409,8 @@ public final class ManaShapes {
                             argb = lighter(argb, 0.55F);
                         }
                     } else {
-                        argb = scale(emptyTint, 0.7F + 0.6F * t);
+                        // The empty part moves along, but only half as strongly
+                        argb = scale(emptyTint, 0.7F + 0.6F * (0.5F * t + 0.5F * still));
                     }
                     argb = switch (shape.edges[i]) {
                         case EDGE_LIGHT -> lighter(argb, 0.3F);
@@ -454,8 +478,29 @@ public final class ManaShapes {
                 }
             }
             fillTexture = values;
+            float sum = 0.0F;
+            for (float value : values) {
+                sum += value;
+            }
+            textureMean = sum / values.length;
         }
         return fillTexture;
+    }
+
+    /** Bilinear sample of the tileable texture at a fractional position (wraps around). */
+    private static float sample(float[] texture, double u, double v) {
+        int x0 = Mth.floor(u);
+        int y0 = Mth.floor(v);
+        float fx = (float) (u - x0);
+        float fy = (float) (v - y0);
+        int mask = TEXTURE_SIZE - 1;
+        int xa = x0 & mask;
+        int xb = (x0 + 1) & mask;
+        int ya = (y0 & mask) * TEXTURE_SIZE;
+        int yb = ((y0 + 1) & mask) * TEXTURE_SIZE;
+        float top = texture[ya + xa] + (texture[ya + xb] - texture[ya + xa]) * fx;
+        float bottom = texture[yb + xa] + (texture[yb + xb] - texture[yb + xa]) * fx;
+        return top + (bottom - top) * fy;
     }
 
     private static int scale(int color, float factor) {
