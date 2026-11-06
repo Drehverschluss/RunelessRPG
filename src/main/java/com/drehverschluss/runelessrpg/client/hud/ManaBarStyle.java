@@ -9,5 +9,9 @@ public enum ManaBarStyle {
     /** Framed bar that matches Miki's HUD. */
     MIKI,
     /** Upright bar that fills from the bottom. */
-    VERTICAL
+    VERTICAL,
+    /** Diamond behind Miki's hunger / health diamond (only the outer half shows); a whole diamond elsewhere. */
+    MIKI_DIAMOND,
+    /** Band along the outer edges of Miki's hunger / health diamond; MIKI elsewhere. */
+    MIKI_BAND
 }

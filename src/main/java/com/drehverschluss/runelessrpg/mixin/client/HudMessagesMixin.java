@@ -1,6 +1,7 @@
 package com.drehverschluss.runelessrpg.mixin.client;
 
 import com.drehverschluss.runelessrpg.client.hud.ManaFlash;
+import com.drehverschluss.runelessrpg.client.hud.ManaTextFade;
 import com.drehverschluss.runelessrpg.item.RunelessItems;
 import net.spell_engine.client.gui.HudMessages;
 import net.spell_engine.internals.casting.SpellCast;
@@ -17,6 +18,7 @@ public abstract class HudMessagesMixin {
         if (attempt.result() == SpellCast.Attempt.Result.MISSING_ITEM && attempt.missingItem() != null
                 && attempt.missingItem().item().item() == RunelessItems.MANA.get()) {
             ManaFlash.trigger();
+            ManaTextFade.ping();
         }
     }
 }

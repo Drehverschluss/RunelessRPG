@@ -1,13 +1,13 @@
 package com.drehverschluss.runelessrpg.client.hud;
 
-import com.drehverschluss.runelessrpg.client.config.RunelessClientConfig;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
 
 /**
  * GUI layers of the mana bar. Two layers are registered: one below the vanilla hotbar (behind the hotbar and Miki's HUD,
- * which Miki draws directly above the hotbar) and one above it; the config decides which one draws.
+ * which Miki draws directly above the hotbar) and one above it; the config decides which one draws. The half diamond
+ * docked at Miki's diamond always draws behind it. Behind Miki's HUD the number is drawn in the front layer.
  */
 public final class ManaHudLayer implements LayeredDraw.Layer {
     public static final ManaHudLayer BEHIND = new ManaHudLayer(true);
@@ -21,9 +21,18 @@ public final class ManaHudLayer implements LayeredDraw.Layer {
 
     @Override
     public void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
-        if (RunelessClientConfig.DRAW_BEHIND_MIKI_HUD.get() != behind || !ManaBar.INSTANCE.shouldRender()) {
+        ManaBar bar = ManaBar.INSTANCE;
+        if (!bar.shouldRender()) {
             return;
         }
-        ManaBar.INSTANCE.render(graphics);
+        boolean drawsBehind = bar.drawsBehind();
+        if (behind && drawsBehind) {
+            bar.render(graphics, bar.textInFront() ? ManaBar.Pass.SHAPE : ManaBar.Pass.ALL);
+        } else if (!behind && !drawsBehind) {
+            bar.render(graphics, ManaBar.Pass.ALL);
+        } else if (!behind && bar.textInFront()) {
+            // Behind Miki's HUD the number would be covered by Miki's vines; it stays readable in front
+            bar.render(graphics, ManaBar.Pass.TEXT);
+        }
     }
 }

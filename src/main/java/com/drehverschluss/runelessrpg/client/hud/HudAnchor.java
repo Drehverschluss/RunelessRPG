@@ -4,9 +4,9 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Screen anchor of the mana bar. The final position is anchor point + offset, so the bar keeps its relative position
- * for every window size and GUI scale. {@link #MIKI_LEFT}/{@link #MIKI_RIGHT} dock at Miki's HUD (see {@link MikiCompat}).
+ * for every window size and GUI scale. The {@code MIKI_*} anchors dock at Miki's HUD (see {@link MikiCompat}).
  * <p>
- * Based on {@code HudAnchor} from Perilscope (same author, MIT), extended by the two Miki anchors.
+ * Based on {@code HudAnchor} from Perilscope (same author, MIT), extended by the Miki anchors.
  */
 public enum HudAnchor {
     TOP_LEFT(Align.START, Align.START),
@@ -21,7 +21,11 @@ public enum HudAnchor {
     /** Docked at the left (health) side of Miki's HUD, or above the health row without it. */
     MIKI_LEFT(null, null),
     /** Docked at the right (hunger) side of Miki's HUD, or above the hunger row without it. */
-    MIKI_RIGHT(null, null);
+    MIKI_RIGHT(null, null),
+    /** Left of the level box at the top of Miki's hotbar; without Miki's HUD like {@link #MIKI_LEFT}. */
+    MIKI_LEVEL_LEFT(null, null),
+    /** Right of the level box at the top of Miki's hotbar; without Miki's HUD like {@link #MIKI_RIGHT}. */
+    MIKI_LEVEL_RIGHT(null, null);
 
     @Nullable
     private final Align horizontal;
@@ -35,6 +39,21 @@ public enum HudAnchor {
 
     public boolean isMiki() {
         return horizontal == null;
+    }
+
+    /** MIKI_LEFT / MIKI_RIGHT: beside the health / hunger diamond. */
+    public boolean isMikiSide() {
+        return this == MIKI_LEFT || this == MIKI_RIGHT;
+    }
+
+    /** MIKI_LEVEL_LEFT / MIKI_LEVEL_RIGHT: beside the level box. */
+    public boolean isMikiLevel() {
+        return this == MIKI_LEVEL_LEFT || this == MIKI_LEVEL_RIGHT;
+    }
+
+    /** True for the Miki anchors on the right half of the screen. */
+    public boolean isMikiRight() {
+        return this == MIKI_RIGHT || this == MIKI_LEVEL_RIGHT;
     }
 
     /** @return x of the left edge of the element (screen anchors only) */

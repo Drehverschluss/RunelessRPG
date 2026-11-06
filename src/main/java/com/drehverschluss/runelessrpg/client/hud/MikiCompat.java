@@ -11,7 +11,8 @@ import java.lang.reflect.Method;
  * Position of Miki's HUD. Miki draws its layout around the bottom center and shrinks it to fit the screen:
  * {@code halfWidth = max(175, or 229 with Simply Skills; 185 + 20 × spell slots; RPG Survival Skills slots)},
  * {@code scale = min(1, (guiWidth − 4) / (2 × halfWidth))}, scaled around {@code (guiWidth / 2, guiHeight)}.
- * The hunger diamond is centered at {@code (guiWidth / 2 + 138, guiHeight − 37)}, the health diamond mirrored.
+ * The hunger diamond is centered at {@code (guiWidth / 2 + 138, guiHeight − 37)}, the health diamond mirrored; the level
+ * box spans {@code guiWidth / 2 − 31 … + 23} (with the "LV." plate on the left), {@code guiHeight − 48 … − 33}.
  * <p>
  * Only Miki's state flags are read by reflection (whether its Spell Engine / RPG Survival Skills adapters are active);
  * any failure is logged once and falls back to the vanilla layout.
@@ -29,6 +30,27 @@ public final class MikiCompat {
     private static final int VANILLA_SIDE_X = 95;
     /** Without Miki: vertical center of the bar = center of the experience bar. */
     private static final int VANILLA_DOCK_Y = 27;
+    /** Distance of the inner end of a bar at a level anchor from the screen center: right of the level box (edge 23) … */
+    private static final int LEVEL_X_RIGHT = 26;
+    /** … and left of the "LV." plate (edge −31) + gap. */
+    private static final int LEVEL_X_LEFT = 33;
+    /** Distance of the vertical center of a bar at a level anchor from the bottom (center of the level box). */
+    private static final int LEVEL_DOCK_Y = 41;
+    /** Free length beside the level box up to the small dark diamond in front of the big one (right: 26 … 84). */
+    public static final int LEVEL_BAR_LENGTH_RIGHT = 58;
+    /** Left: −33 … −87. */
+    public static final int LEVEL_BAR_LENGTH_LEFT = 54;
+
+    /*
+     * Geometry of the big diamonds in Miki coordinates (relative to the bottom center of the screen, before Miki's
+     * scaling, continuous: pixel n covers [n, n + 1)). The hunger diamond frame covers |x − 138| + |y + 37| ≤ 30 for
+     * pixel centers; the health diamond is mirrored (x → −x).
+     */
+    public static final double FRAME_CENTER_X = 138.0;
+    public static final double FRAME_CENTER_Y = -37.0;
+    public static final double FRAME_RADIUS = 30.0;
+    /** Center of the mana diamond: mirror image of Miki's small dark diamond (center 109) at the hunger diamond. */
+    public static final double SIDE_DIAMOND_X = 167.0;
 
     private static Boolean loaded;
     private static boolean failed;
@@ -74,6 +96,22 @@ public final class MikiCompat {
             return new Dock(centerX + (mikiX - centerX) * scale, guiHeight + (mikiY - guiHeight) * scale, scale, true, diamondX, artTop);
         }
         // Without Miki: beside the hotbar at the height of the experience bar (free of vanilla elements).
+        return vanillaDock(right, guiWidth, guiHeight);
+    }
+
+    /** Docking point beside the level box: x of the box side the bar starts from, y of the bar's vertical center. */
+    public static Dock levelDock(boolean right, int guiWidth, int guiHeight) {
+        if (isActive()) {
+            int centerX = guiWidth / 2;
+            double scale = scale(guiWidth);
+            return new Dock(centerX + (right ? LEVEL_X_RIGHT : -LEVEL_X_LEFT) * scale, guiHeight - LEVEL_DOCK_Y * scale, scale, true,
+                    centerX, guiHeight - ART_HEIGHT * scale);
+        }
+        return vanillaDock(right, guiWidth, guiHeight);
+    }
+
+    private static Dock vanillaDock(boolean right, int guiWidth, int guiHeight) {
+        int centerX = guiWidth / 2;
         return new Dock(centerX + (right ? VANILLA_SIDE_X : -VANILLA_SIDE_X), guiHeight - VANILLA_DOCK_Y, 1.0, false,
                 centerX, guiHeight - VANILLA_DOCK_Y);
     }

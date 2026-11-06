@@ -2,6 +2,8 @@ package com.drehverschluss.runelessrpg;
 
 import com.drehverschluss.runelessrpg.client.config.RunelessClientConfig;
 import com.drehverschluss.runelessrpg.client.hud.ManaHudLayer;
+import com.drehverschluss.runelessrpg.client.hud.ManaHudTooltip;
+import com.drehverschluss.runelessrpg.client.hud.ManaTextFade;
 import com.drehverschluss.runelessrpg.client.screen.ManaHudEditScreen;
 import com.drehverschluss.runelessrpg.client.screen.RunelessConfigMenuScreen;
 import com.drehverschluss.runelessrpg.cost.CastContext;
@@ -39,6 +41,7 @@ public class RunelessRPGClient {
         modEventBus.addListener(RunelessRPGClient::onConfigReloading);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Pre.class, event -> CastContext.clear());
         NeoForge.EVENT_BUS.addListener(RunelessRPGClient::onClientTick);
+        NeoForge.EVENT_BUS.addListener(ManaHudTooltip::onScreenRender);
     }
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
@@ -61,6 +64,7 @@ public class RunelessRPGClient {
 
     private static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
+        ManaTextFade.tick();
         while (EDIT_HUD_KEY.consumeClick()) {
             if (minecraft.screen == null) {
                 minecraft.setScreen(new ManaHudEditScreen(null));

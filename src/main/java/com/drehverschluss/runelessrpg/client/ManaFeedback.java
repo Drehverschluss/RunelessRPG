@@ -1,6 +1,7 @@
 package com.drehverschluss.runelessrpg.client;
 
 import com.drehverschluss.runelessrpg.client.hud.ManaFlash;
+import com.drehverschluss.runelessrpg.client.hud.ManaTextFade;
 import com.drehverschluss.runelessrpg.item.RunelessItems;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;
@@ -19,5 +20,6 @@ public final class ManaFeedback {
             HudMessages.INSTANCE.error(Component.translatable("hud.cast_attempt_error.missing_item", itemName).withStyle(ChatFormatting.RED));
         }
         ManaFlash.trigger();
+        ManaTextFade.ping();
     }
 }
