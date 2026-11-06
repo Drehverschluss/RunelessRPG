@@ -21,6 +21,13 @@ public final class ManaAttachments {
     public static final Supplier<AttachmentType<ManaSyncState>> SYNC_STATE = ATTACHMENTS.register("mana_sync_state",
             () -> AttachmentType.builder(ManaSyncState::new).build());
 
+    /**
+     * Overcharge bonus (multiplier, 1 = none) a summon or spell cloud was created with: the overcharge of the player
+     * at that moment, if the creating spell cost him mana. Saved with the entity, never sent to clients.
+     */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<Double>> OVERCHARGE_SNAPSHOT = ATTACHMENTS.register(
+            "overcharge_snapshot", () -> AttachmentType.builder(() -> 1.0).serialize(Codec.DOUBLE).build());
+
     private ManaAttachments() {}
 
     public static void register(IEventBus modBus) {

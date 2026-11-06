@@ -112,6 +112,14 @@ public final class RunelessCommands {
         source.sendSuccess(() -> Component.translatable("commands.runelessrpg.cost.factors", player.getDisplayName(),
                 percent(manaCost), percent(settings.minManaCostPercent() / 100.0), percent(factor), percent(overcharge)), false);
         source.sendSuccess(() -> Component.translatable("commands.runelessrpg.cost.result", CostFormat.format(total)), false);
+        boolean infinity = ManaCosts.hasSpellInfinity(player, settings);
+        source.sendSuccess(() -> Component.translatable("commands.runelessrpg.cost.infinity",
+                Component.translatable(infinity ? "gui.yes" : "gui.no"), settings.spellInfinityMode().name(),
+                percent(ManaCosts.manaCostFloorPercent(player) / 100.0)), false);
+        double bonus = ManaCosts.overchargeBonus(player, holder) - 1.0;
+        source.sendSuccess(() -> Component.translatable("commands.runelessrpg.cost.overcharge",
+                CostFormat.format(bonus * 100.0), CostFormat.format(settings.overchargeDamageFactor()),
+                Component.translatable(settings.overchargeAffectsHealing() ? "gui.yes" : "gui.no")), false);
         if (info.channeled()) {
             int ticks = ManaCosts.channelTicks(player, holder);
             source.sendSuccess(() -> Component.translatable("commands.runelessrpg.cost.channel", ticks,

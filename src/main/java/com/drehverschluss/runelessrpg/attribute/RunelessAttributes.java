@@ -29,6 +29,9 @@ public final class RunelessAttributes {
     public static final DeferredHolder<Attribute, Attribute> MANA_LEECH = ATTRIBUTES.register("mana_leech",
             () -> new PercentageAttribute(key("mana_leech"), 0.0, 0.0, 1.0)
                     .setSyncable(true).setSentiment(Attribute.Sentiment.POSITIVE));
+    public static final DeferredHolder<Attribute, Attribute> SPELL_MANA_LEECH = ATTRIBUTES.register("spell_mana_leech",
+            () -> new PercentageAttribute(key("spell_mana_leech"), 0.0, 0.0, 1.0)
+                    .setSyncable(true).setSentiment(Attribute.Sentiment.POSITIVE));
 
     private RunelessAttributes() {}
 
@@ -48,5 +51,6 @@ public final class RunelessAttributes {
         event.add(EntityType.PLAYER, MANA_COST);
         event.add(EntityType.PLAYER, OVERCHARGE);
         event.add(EntityType.PLAYER, MANA_LEECH);
+        event.add(EntityType.PLAYER, SPELL_MANA_LEECH);
     }
 }

@@ -4,6 +4,7 @@ import com.drehverschluss.runelessrpg.api.ManaCategory;
 import com.drehverschluss.runelessrpg.api.ManaCostEvent;
 import com.drehverschluss.runelessrpg.attribute.RunelessAttributes;
 import com.drehverschluss.runelessrpg.config.RunelessServerConfig.ManaMode;
+import com.drehverschluss.runelessrpg.config.RunelessServerConfig.SpellInfinityMode;
 import com.drehverschluss.runelessrpg.cost.CastContext.Stage;
 import com.drehverschluss.runelessrpg.cost.SpellCostInfo.Source;
 import com.drehverschluss.runelessrpg.mana.ManaManager;
@@ -17,6 +18,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.NeoForge;
 import net.spell_engine.api.spell.Spell;
@@ -27,6 +29,7 @@ import java.util.Optional;
 /** Central cost logic, identical on client and server. */
 public final class ManaCosts {
     private static final double EPSILON = 1.0E-9;
+    private static final ResourceLocation SPELL_INFINITY = ResourceLocation.fromNamespaceAndPath("spell_engine", "spell_infinity");
 
     private ManaCosts() {}
 
@@ -128,17 +131,51 @@ public final class ManaCosts {
         return player.getAbilities().instabuild && CostSettings.forSide(player.level().isClientSide()).creativeFreeCasting();
     }
 
-    /** Effective {@code mana_cost} factor including its lower limit. */
+    /** Effective {@code mana_cost} factor including its lower limit (and Spell Infinity on the held item). */
     public static double manaCostFactor(Player player, Holder<Spell> holder) {
         CostSettings settings = CostSettings.forSide(player.level().isClientSide());
-        double floor = settings.minManaCostPercent() / 100.0;
+        double floorPercent = settings.minManaCostPercent();
         double manaCost = player.getAttributeValue(RunelessAttributes.MANA_COST);
-        return applySpellInfinity(player, holder, Math.max(floor, manaCost));
+        if (hasSpellInfinity(player, settings)) {
+            floorPercent = Math.max(0.0, floorPercent - settings.spellInfinityFloorReduction());
+            manaCost -= settings.spellInfinityCostReduction() / 100.0;
+        }
+        return Math.max(floorPercent / 100.0, manaCost);
     }
 
-    // Hook for Infinite Spells (Phase 5): will lower the cost factor and its floor. No effect yet.
-    private static double applySpellInfinity(Player player, Holder<Spell> holder, double factor) {
-        return factor;
+    /**
+     * True if Spell Infinity lowers the cost: mode REDUCE_COST and the held item (the stack Spell Engine casts from,
+     * {@code casterStack}) has {@code spell_engine:spell_infinity}.
+     */
+    public static boolean hasSpellInfinity(Player player, CostSettings settings) {
+        if (settings.spellInfinityMode() != SpellInfinityMode.REDUCE_COST) {
+            return false;
+        }
+        return player.level().registryAccess().registry(Registries.ENCHANTMENT)
+                .flatMap(registry -> registry.getHolder(ResourceKey.create(Registries.ENCHANTMENT, SPELL_INFINITY)))
+                .map(enchantment -> EnchantmentHelper.getItemEnchantmentLevel(enchantment, player.getMainHandItem()) > 0)
+                .orElse(false);
+    }
+
+    /** Lower limit of the {@code mana_cost} factor in percent for this player right now (Spell Infinity lowers it). */
+    public static double manaCostFloorPercent(Player player) {
+        CostSettings settings = CostSettings.forSide(player.level().isClientSide());
+        double floor = settings.minManaCostPercent();
+        return hasSpellInfinity(player, settings) ? Math.max(0.0, floor - settings.spellInfinityFloorReduction()) : floor;
+    }
+
+    /**
+     * Overcharge multiplier for damage / healing of the spell cast by this player right now: 1 + overcharge × factor,
+     * only for spells that cost the player mana; 1 otherwise.
+     */
+    public static double overchargeBonus(Player player, Holder<Spell> holder) {
+        SpellCostInfo info = resolve(player.level(), holder);
+        if (!info.costsMana()) {
+            return 1.0;
+        }
+        CostSettings settings = CostSettings.forSide(player.level().isClientSide());
+        double overcharge = player.getAttributeValue(RunelessAttributes.OVERCHARGE);
+        return 1.0 + Math.max(0.0, overcharge) * settings.overchargeDamageFactor();
     }
 
     /** Final cost for the player (total for the full channel duration of channeled spells). */

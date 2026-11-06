@@ -33,6 +33,26 @@ public final class RunelessServerConfig {
     public static final ModConfigSpec.DoubleValue CHANNEL_START_PERCENT;
     public static final ModConfigSpec.BooleanValue COOLDOWN_ON_CHANNEL_ABORT;
 
+    public static final ModConfigSpec.DoubleValue OVERCHARGE_DAMAGE_FACTOR;
+    public static final ModConfigSpec.BooleanValue OVERCHARGE_AFFECTS_HEALING;
+    public static final ModConfigSpec.BooleanValue OVERCHARGE_AFFECTS_SUMMONS;
+
+    public static final ModConfigSpec.DoubleValue MANA_LEECH_EXTRA_TARGET_PERCENT;
+    public static final ModConfigSpec.DoubleValue SPELL_MANA_LEECH_EXTRA_TARGET_PERCENT;
+    public static final ModConfigSpec.BooleanValue LEECH_CAP_AT_TARGET_HEALTH;
+
+    public static final ModConfigSpec.EnumValue<SpellInfinityMode> SPELL_INFINITY_MODE;
+    public static final ModConfigSpec.DoubleValue SPELL_INFINITY_COST_REDUCTION;
+    public static final ModConfigSpec.DoubleValue SPELL_INFINITY_FLOOR_REDUCTION;
+
+    /** Effect of the enchantment spell_engine:spell_infinity on mana costs. */
+    public enum SpellInfinityMode {
+        /** Lowers the cost factor and its floor. */
+        REDUCE_COST,
+        /** No effect on mana costs. */
+        NONE
+    }
+
     /** What happens when a player has less mana than a spell costs. */
     public enum ManaMode {
         /** Cast only if the mana covers the whole cost. */
@@ -119,6 +139,44 @@ public final class RunelessServerConfig {
                 .comment("Prevents skipping a channeled spell's cooldown by interrupting it.",
                         "An interrupted channel (item switch, new spell, death, logout) gets the cooldown of releasing it at that point.")
                 .define("cooldownOnChannelAbort", true);
+        builder.pop();
+
+        builder.comment("Overcharge: spells cost more and deal more damage / healing").push("overcharge");
+        OVERCHARGE_DAMAGE_FACTOR = builder
+                .comment("Damage / healing bonus = overcharge x this factor (0.5: +20% cost = +10% damage)")
+                .defineInRange("overchargeDamageFactor", 0.5, 0.0, 10.0);
+        OVERCHARGE_AFFECTS_HEALING = builder
+                .comment("Overcharge also increases spell healing")
+                .define("overchargeAffectsHealing", true);
+        OVERCHARGE_AFFECTS_SUMMONS = builder
+                .comment("Summons and spell clouds keep the overcharge bonus their spell was paid with (snapshot when created)")
+                .define("overchargeAffectsSummons", true);
+        builder.pop();
+
+        builder.comment("Mana leech (weapon damage) and spell mana leech (direct spell hits)").push("mana_leech");
+        MANA_LEECH_EXTRA_TARGET_PERCENT = builder
+                .comment("Weapon mana leech: every further target hit in the same game tick gives only this percentage (0 = first target only)")
+                .defineInRange("manaLeechExtraTargetPercent", 25.0, 0.0, 100.0);
+        SPELL_MANA_LEECH_EXTRA_TARGET_PERCENT = builder
+                .comment("Spell mana leech: every further target hit in the same game tick gives only this percentage (0 = first target only)")
+                .defineInRange("spellManaLeechExtraTargetPercent", 25.0, 0.0, 100.0);
+        LEECH_CAP_AT_TARGET_HEALTH = builder
+                .comment("Count at most the health the target had before the hit (no mana from overkill damage)")
+                .define("leechCapAtTargetHealth", true);
+        builder.pop();
+
+        builder.comment("Enchantment spell_engine:spell_infinity").push("spell_infinity");
+        SPELL_INFINITY_MODE = builder
+                .comment("REDUCE_COST = reduces the mana cost and lowers the floor of mana_cost",
+                        "NONE        = no effect on mana costs (a pack may disable it by emptying #spell_engine:enchantable/spell_infinity)",
+                        "Spells that cost runes (category disabled) keep Spell Engine's behavior: no runes are consumed")
+                .defineEnum("mode", SpellInfinityMode.REDUCE_COST);
+        SPELL_INFINITY_COST_REDUCTION = builder
+                .comment("Counts as this many percent less runelessrpg:mana_cost")
+                .defineInRange("costReductionPercent", 20.0, 0.0, 100.0);
+        SPELL_INFINITY_FLOOR_REDUCTION = builder
+                .comment("Lowers minManaCostPercent by this many points (never below 0)")
+                .defineInRange("floorReductionPercent", 20.0, 0.0, 100.0);
         builder.pop();
 
         SPEC = builder.build();

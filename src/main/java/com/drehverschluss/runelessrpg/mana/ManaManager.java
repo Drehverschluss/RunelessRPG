@@ -61,6 +61,25 @@ public final class ManaManager {
     }
 
     /**
+     * Gives mana back (mana leech): never above max mana, and in debt it pays the debt back (the result may still be
+     * negative). Does nothing if the player is already at or above max mana.
+     */
+    public static void restoreMana(ServerPlayer player, double amount, ManaChangeEvent.Reason reason) {
+        if (amount <= 0.0) {
+            return;
+        }
+        double old = getMana(player);
+        double max = getMaxMana(player);
+        if (old >= max) {
+            return;
+        }
+        double next = Math.min(old + amount, max);
+        player.setData(ManaAttachments.MANA, next);
+        NeoForge.EVENT_BUS.post(new ManaChangeEvent(player, old, next, reason));
+        sync(player);
+    }
+
+    /**
      * Removes mana for a spell. With {@code allowDebt} the result may become negative (DEBT modes), otherwise it stops at 0.
      */
     public static void spendForSpell(ServerPlayer player, double amount, boolean allowDebt) {

@@ -82,6 +82,18 @@ public final class RunelessApi {
         return info.costsMana() ? OptionalDouble.of(ManaCosts.cost(player, spell, info)) : OptionalDouble.empty();
     }
 
+    /**
+     * Damage / healing multiplier from {@code runelessrpg:overcharge} for this spell cast by this player right now:
+     * {@code 1 + overcharge × overchargeDamageFactor} (server config), only for spells that cost the player mana.
+     * Healing only gets it with {@code overchargeAffectsHealing}. Summons and spell clouds keep the value from the
+     * moment they were created instead.
+     *
+     * @return the multiplier, {@code 1.0} = no bonus
+     */
+    public static double getOverchargeBonus(Player player, Holder<Spell> spell) {
+        return ManaCosts.overchargeBonus(player, spell);
+    }
+
     /** @return true if the spell is channeled (its cost is spread over the channel ticks in the DRAIN mode) */
     public static boolean isChanneled(Holder<Spell> spell) {
         return net.spell_engine.internals.SpellParameters.isChanneled(spell.value());

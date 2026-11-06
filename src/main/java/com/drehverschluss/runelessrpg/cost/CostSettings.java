@@ -3,6 +3,7 @@ package com.drehverschluss.runelessrpg.cost;
 import com.drehverschluss.runelessrpg.config.RunelessServerConfig;
 import com.drehverschluss.runelessrpg.config.RunelessServerConfig.ChannelCostMode;
 import com.drehverschluss.runelessrpg.config.RunelessServerConfig.ManaMode;
+import com.drehverschluss.runelessrpg.config.RunelessServerConfig.SpellInfinityMode;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 
@@ -24,10 +25,16 @@ public record CostSettings(
         boolean weaponSkillsEnabled, double weaponSkillsMultiplier,
         boolean itemAbilitiesEnabled, double itemAbilitiesMultiplier,
         ChannelCostMode channelCostMode,
-        double channelStartPercent) {
+        double channelStartPercent,
+        double overchargeDamageFactor,
+        boolean overchargeAffectsHealing,
+        SpellInfinityMode spellInfinityMode,
+        double spellInfinityCostReduction,
+        double spellInfinityFloorReduction) {
 
     public static final CostSettings DEFAULTS = new CostSettings(ManaMode.FULL_COST, 50.0, true, 50.0,
-            List.of(4.0, 5.0, 7.0, 10.0, 14.0, 18.0), true, 1.0, true, 0.75, true, 0.5, false, 1.0, ChannelCostMode.DRAIN, 0.0);
+            List.of(4.0, 5.0, 7.0, 10.0, 14.0, 18.0), true, 1.0, true, 0.75, true, 0.5, false, 1.0, ChannelCostMode.DRAIN, 0.0,
+            0.5, true, SpellInfinityMode.REDUCE_COST, 20.0, 20.0);
 
     public static final StreamCodec<FriendlyByteBuf, CostSettings> STREAM_CODEC = StreamCodec.of(CostSettings::write, CostSettings::read);
 
@@ -61,7 +68,12 @@ public record CostSettings(
                 RunelessServerConfig.WEAPON_SKILLS_ENABLED.get(), RunelessServerConfig.WEAPON_SKILLS_MULTIPLIER.get(),
                 RunelessServerConfig.ITEM_ABILITIES_ENABLED.get(), RunelessServerConfig.ITEM_ABILITIES_MULTIPLIER.get(),
                 RunelessServerConfig.CHANNEL_COST_MODE.get(),
-                RunelessServerConfig.CHANNEL_START_PERCENT.get());
+                RunelessServerConfig.CHANNEL_START_PERCENT.get(),
+                RunelessServerConfig.OVERCHARGE_DAMAGE_FACTOR.get(),
+                RunelessServerConfig.OVERCHARGE_AFFECTS_HEALING.get(),
+                RunelessServerConfig.SPELL_INFINITY_MODE.get(),
+                RunelessServerConfig.SPELL_INFINITY_COST_REDUCTION.get(),
+                RunelessServerConfig.SPELL_INFINITY_FLOOR_REDUCTION.get());
     }
 
     /** Tier table lookup: higher tiers use the last value, negative tiers the first. */
@@ -92,6 +104,11 @@ public record CostSettings(
         buf.writeDouble(s.itemAbilitiesMultiplier);
         buf.writeEnum(s.channelCostMode);
         buf.writeDouble(s.channelStartPercent);
+        buf.writeDouble(s.overchargeDamageFactor);
+        buf.writeBoolean(s.overchargeAffectsHealing);
+        buf.writeEnum(s.spellInfinityMode);
+        buf.writeDouble(s.spellInfinityCostReduction);
+        buf.writeDouble(s.spellInfinityFloorReduction);
     }
 
     private static CostSettings read(FriendlyByteBuf buf) {
@@ -107,6 +124,7 @@ public record CostSettings(
         return new CostSettings(manaMode, maxDebt, creative, minPercent, List.copyOf(tiers),
                 buf.readBoolean(), buf.readDouble(), buf.readBoolean(), buf.readDouble(),
                 buf.readBoolean(), buf.readDouble(), buf.readBoolean(), buf.readDouble(),
-                buf.readEnum(ChannelCostMode.class), buf.readDouble());
+                buf.readEnum(ChannelCostMode.class), buf.readDouble(),
+                buf.readDouble(), buf.readBoolean(), buf.readEnum(SpellInfinityMode.class), buf.readDouble(), buf.readDouble());
     }
 }

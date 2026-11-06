@@ -25,7 +25,17 @@ public class ManaChangeEvent extends Event {
         /** Lowered to a smaller maximum, e.g. after removing gear with max mana. */
         CLAMP,
         /** Paid for a spell (also every tick of a channeled spell). May go below 0 in the debt modes. */
-        SPELL
+        SPELL,
+        /**
+         * Weapon mana leech ({@code runelessrpg:mana_leech}): a part of the weapon damage dealt came back as mana.
+         * Never above max mana; pays back debt.
+         */
+        LEECH,
+        /**
+         * Spell mana leech ({@code runelessrpg:spell_mana_leech}): a part of the damage of a direct spell hit came back
+         * as mana. Never above max mana; pays back debt.
+         */
+        SPELL_LEECH
     }
 
     private final Player player;

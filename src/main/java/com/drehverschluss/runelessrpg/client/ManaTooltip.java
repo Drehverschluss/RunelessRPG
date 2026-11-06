@@ -15,6 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import net.spell_engine.api.spell.Spell;
 import net.spell_engine.api.spell.registry.SpellRegistry;
 import net.spell_engine.internals.cost.Ammo;
+import net.spell_engine.internals.impact.SpellEstimation;
 
 import java.util.List;
 import java.util.function.Function;
@@ -63,5 +64,51 @@ public final class ManaTooltip {
         }
         String indent = indentLevel > 0 ? " ".repeat(indentLevel) : "";
         lines.add(Component.literal(indent).append(text).withStyle(affordable ? ChatFormatting.GREEN : ChatFormatting.RED));
+        appendOverchargeLine(holder, player, indent, lines);
+    }
+
+    /** "Overcharge: +10% damage" (or healing / damage and healing) below the cost line, only with a bonus. */
+    private static void appendOverchargeLine(Holder<Spell> holder, Player player, String indent, List<Component> lines) {
+        double bonus = ManaCosts.overchargeBonus(player, holder) - 1.0;
+        if (bonus <= 1.0E-9) {
+            return;
+        }
+        boolean damage = hasImpact(holder.value(), Spell.Impact.Action.Type.DAMAGE);
+        boolean healing = hasImpact(holder.value(), Spell.Impact.Action.Type.HEAL) && CostSettings.client().overchargeAffectsHealing();
+        String key;
+        if (damage && healing) {
+            key = "spell.tooltip.runelessrpg.overcharge.both";
+        } else if (healing) {
+            key = "spell.tooltip.runelessrpg.overcharge.healing";
+        } else if (damage) {
+            key = "spell.tooltip.runelessrpg.overcharge.damage";
+        } else {
+            return;
+        }
+        lines.add(Component.literal(indent).append(Component.translatable(key, CostFormat.format(bonus * 100.0)))
+                .withStyle(ChatFormatting.DARK_AQUA));
+    }
+
+    private static boolean hasImpact(Spell spell, Spell.Impact.Action.Type type) {
+        if (spell.impacts != null && spell.impacts.stream().anyMatch(impact -> impact.action.type == type)) {
+            return true;
+        }
+        return spell.modifiers != null && spell.modifiers.stream()
+                .anyMatch(modifier -> modifier.impacts.stream().anyMatch(impact -> impact.action.type == type));
+    }
+
+    /** Spell Engine's damage / healing estimate of the description, multiplied by the overcharge bonus. */
+    public static SpellEstimation.EstimatedOutput withOvercharge(SpellEstimation.EstimatedOutput output, Holder<Spell> holder, Player player) {
+        if (player == null) {
+            return output;
+        }
+        double bonus = ManaCosts.overchargeBonus(player, holder);
+        if (bonus == 1.0) {
+            return output;
+        }
+        double healBonus = CostSettings.client().overchargeAffectsHealing() ? bonus : 1.0;
+        return new SpellEstimation.EstimatedOutput(
+                output.damage().stream().map(value -> value.multiply(bonus)).toList(),
+                output.heal().stream().map(value -> value.multiply(healBonus)).toList());
     }
 }

@@ -6,7 +6,10 @@
   "mixins": [
     "AmmoMixin",
     "SpellCastInteractorMixin",
-    "SpellExecutionMixin"
+    "SpellCloudMixin",
+    "SpellExecutionMixin",
+    "SpellImpactsMixin",
+    "SpellStashHelperMixin"
   ],
   "client": [
     "client.HudMessagesMixin",
