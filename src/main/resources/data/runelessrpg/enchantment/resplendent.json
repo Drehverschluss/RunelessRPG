@@ -1,0 +1,20 @@
+{
+  "anvil_cost": 2,
+  "description": { "translate": "enchantment.runelessrpg.resplendent" },
+  "effects": {
+    "minecraft:attributes": [
+      {
+        "amount": { "type": "minecraft:linear", "base": 0.2, "per_level_above_first": 0.2 },
+        "attribute": "runelessrpg:mana_regen",
+        "id": "runelessrpg:enchantment.resplendent",
+        "operation": "add_value"
+      }
+    ]
+  },
+  "max_cost": { "base": 12, "per_level_above_first": 11 },
+  "max_level": 5,
+  "min_cost": { "base": 1, "per_level_above_first": 11 },
+  "slots": [ "mainhand" ],
+  "supported_items": "#runelessrpg:enchantable/magic_weapon",
+  "weight": 5
+}

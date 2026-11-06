@@ -1,0 +1,52 @@
+{
+    "neoforge:conditions": [
+        {
+            "type": "neoforge:mod_loaded",
+            "modid": "apotheosis"
+        }
+    ],
+    "type": "runelessrpg:attribute",
+    "attribute": "runelessrpg:mana_leech",
+    "categories": [
+        "apotheosis:melee_weapon",
+        "apotheosis:bow",
+        "apotheosis:trident"
+    ],
+    "exclude_items": "#runelessrpg:enchantable/magic_weapon",
+    "definition": {
+        "affix_type": "stat",
+        "exclusive_set": [],
+        "weights": {
+            "quality": 0.1,
+            "weight": 25
+        }
+    },
+    "operation": "add_value",
+    "values": {
+        "apotheosis:common": {
+            "min": 0.01,
+            "max": 0.02,
+            "step": 0.001
+        },
+        "apotheosis:uncommon": {
+            "min": 0.02,
+            "max": 0.03,
+            "step": 0.001
+        },
+        "apotheosis:rare": {
+            "min": 0.03,
+            "max": 0.04,
+            "step": 0.001
+        },
+        "apotheosis:epic": {
+            "min": 0.04,
+            "max": 0.06,
+            "step": 0.001
+        },
+        "apotheosis:mythic": {
+            "min": 0.05,
+            "max": 0.08,
+            "step": 0.001
+        }
+    }
+}

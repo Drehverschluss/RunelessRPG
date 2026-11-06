@@ -42,3 +42,11 @@ config="${mod_id}.mixins.json"
     versionRange="*"
     ordering="AFTER"
     side="CLIENT"
+
+# Optional: our affix type and affixes register only when Apotheosis is present
+[[dependencies.${mod_id}]]
+    modId="apotheosis"
+    type="optional"
+    versionRange="${apotheosis_version_range}"
+    ordering="AFTER"
+    side="BOTH"

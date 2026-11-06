@@ -1,0 +1,20 @@
+{
+  "anvil_cost": 2,
+  "description": { "translate": "enchantment.runelessrpg.manafused" },
+  "effects": {
+    "minecraft:attributes": [
+      {
+        "amount": { "type": "minecraft:linear", "base": 3, "per_level_above_first": 3 },
+        "attribute": "runelessrpg:max_mana",
+        "id": "runelessrpg:enchantment.manafused",
+        "operation": "add_value"
+      }
+    ]
+  },
+  "max_cost": { "base": 12, "per_level_above_first": 11 },
+  "max_level": 5,
+  "min_cost": { "base": 1, "per_level_above_first": 11 },
+  "slots": [ "armor" ],
+  "supported_items": "#runelessrpg:enchantable/armor",
+  "weight": 5
+}
