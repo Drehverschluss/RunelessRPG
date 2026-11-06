@@ -31,6 +31,7 @@ public final class RunelessServerConfig {
 
     public static final ModConfigSpec.EnumValue<ChannelCostMode> CHANNEL_COST_MODE;
     public static final ModConfigSpec.DoubleValue CHANNEL_START_PERCENT;
+    public static final ModConfigSpec.BooleanValue COOLDOWN_ON_CHANNEL_ABORT;
 
     /** What happens when a player has less mana than a spell costs. */
     public enum ManaMode {
@@ -114,6 +115,10 @@ public final class RunelessServerConfig {
         CHANNEL_START_PERCENT = builder
                 .comment("DRAIN: this percentage of the total cost is paid immediately when the channel starts")
                 .defineInRange("channelStartPercent", 0.0, 0.0, 100.0);
+        COOLDOWN_ON_CHANNEL_ABORT = builder
+                .comment("Prevents skipping a channeled spell's cooldown by interrupting it.",
+                        "An interrupted channel (item switch, new spell, death, logout) gets the cooldown of releasing it at that point.")
+                .define("cooldownOnChannelAbort", true);
         builder.pop();
 
         SPEC = builder.build();

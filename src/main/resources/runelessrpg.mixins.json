@@ -9,6 +9,7 @@
     "SpellExecutionMixin"
   ],
   "client": [
+    "client.HudMessagesMixin",
     "client.SpellTooltipMixin"
   ],
   "injectors": {

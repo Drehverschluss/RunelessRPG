@@ -13,6 +13,7 @@ import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
@@ -29,6 +30,8 @@ public final class CostEvents {
         NeoForge.EVENT_BUS.addListener(CostEvents::onLogout);
         NeoForge.EVENT_BUS.addListener(CostEvents::onServerStarted);
         NeoForge.EVENT_BUS.addListener(CostEvents::onPlayerTick);
+        // Second safety net next to the try/finally in the mixins: no stage survives a tick.
+        NeoForge.EVENT_BUS.addListener(ServerTickEvent.Pre.class, event -> CastContext.clear());
     }
 
     private static void onAddReloadListener(AddReloadListenerEvent event) {
@@ -52,6 +55,8 @@ public final class CostEvents {
 
     private static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            // Fired before the player is saved, so the cooldown is stored with the player.
+            ChannelAbortCooldown.onLogout(player);
             ManaCastHandler.onLogout(player);
         }
     }

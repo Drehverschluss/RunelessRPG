@@ -1,16 +1,20 @@
 package com.drehverschluss.runelessrpg.util;
 
-import java.util.Locale;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 public final class CostFormat {
     private CostFormat() {}
 
-    /** Whole numbers without decimals, otherwise one decimal ("4", "5.3", "0.9"). */
+    /** At most two decimals without trailing zeros ("4", "7.5", "5.25", "0.9", "0.13"). */
     public static String format(double value) {
-        double rounded = Math.round(value * 10.0) / 10.0;
-        if (rounded == Math.rint(rounded)) {
-            return String.format(Locale.ROOT, "%d", (long) rounded);
+        if (!Double.isFinite(value)) {
+            return String.valueOf(value);
         }
-        return String.format(Locale.ROOT, "%.1f", rounded);
+        BigDecimal rounded = BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros();
+        if (rounded.signum() == 0) {
+            return "0";
+        }
+        return rounded.toPlainString();
     }
 }

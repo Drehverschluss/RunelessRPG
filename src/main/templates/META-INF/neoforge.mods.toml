@@ -34,3 +34,11 @@ description='''${mod_description}'''
 
 [[mixins]]
 config="${mod_id}.mixins.json"
+
+# Optional: loaded after Miki's HUD so the bar can be drawn in front of it (drawBehindMikiHud = false)
+[[dependencies.${mod_id}]]
+    modId="mikis_hud"
+    type="optional"
+    versionRange="*"
+    ordering="AFTER"
+    side="CLIENT"

@@ -41,4 +41,9 @@ public final class CastContext {
         Stage stage = STACK.get().peek();
         return stage == null ? Stage.START : stage;
     }
+
+    /** Drops all stages of the current thread (called at the start of every tick). */
+    public static void clear() {
+        STACK.get().clear();
+    }
 }

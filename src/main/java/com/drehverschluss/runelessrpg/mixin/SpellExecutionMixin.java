@@ -2,6 +2,8 @@ package com.drehverschluss.runelessrpg.mixin;
 
 import com.drehverschluss.runelessrpg.cost.CastContext;
 import com.drehverschluss.runelessrpg.cost.ManaCastHandler;
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -21,17 +23,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  */
 @Mixin(value = SpellExecution.class, remap = false)
 public abstract class SpellExecutionMixin {
-    @Inject(method = "performSpell", at = @At("HEAD"))
-    private static void runelessrpg$pushStage(Level world, Player player, Holder<Spell> spellEntry, SpellTarget.SearchResult targetResult,
-                                             SpellCast.Action action, float progress, CallbackInfo ci) {
+    // try/finally around the whole method, so an exception (e.g. from another mod's spell) never leaves a stale stage.
+    @WrapMethod(method = "performSpell")
+    private static void runelessrpg$withStage(Level world, Player player, Holder<Spell> spellEntry, SpellTarget.SearchResult targetResult,
+                                             SpellCast.Action action, float progress, Operation<Void> original) {
         CastContext.push(action == SpellCast.Action.CHANNEL ? CastContext.Stage.CHANNEL_TICK
                 : action == SpellCast.Action.RELEASE ? CastContext.Stage.RELEASE : CastContext.Stage.TRIGGER);
-    }
-
-    @Inject(method = "performSpell", at = @At("RETURN"))
-    private static void runelessrpg$popStage(Level world, Player player, Holder<Spell> spellEntry, SpellTarget.SearchResult targetResult,
-                                            SpellCast.Action action, float progress, CallbackInfo ci) {
-        CastContext.pop();
+        try {
+            original.call(world, player, spellEntry, targetResult, action, progress);
+        } finally {
+            CastContext.pop();
+        }
     }
 
     @Inject(method = "performSpell", at = @At(value = "INVOKE",

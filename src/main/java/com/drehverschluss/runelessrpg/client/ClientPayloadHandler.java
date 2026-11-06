@@ -27,4 +27,8 @@ public final class ClientPayloadHandler {
     public static void handleSpellCosts(SpellCostOverridesPayload payload) {
         SpellCostOverrides.setClientValues(payload.costs());
     }
+
+    public static void handleManaInsufficient() {
+        ManaFeedback.onServerInsufficientMana();
+    }
 }

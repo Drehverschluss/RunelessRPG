@@ -3,6 +3,7 @@ package com.drehverschluss.runelessrpg.cost;
 import com.drehverschluss.runelessrpg.RunelessRPG;
 import com.drehverschluss.runelessrpg.config.RunelessServerConfig.ChannelCostMode;
 import com.drehverschluss.runelessrpg.mana.ManaManager;
+import com.drehverschluss.runelessrpg.network.ManaInsufficientPayload;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -12,6 +13,7 @@ import net.spell_engine.api.spell.event.SpellEvents;
 import net.spell_engine.api.spell.registry.SpellRegistry;
 import net.spell_engine.internals.casting.SpellCast;
 import net.spell_engine.internals.casting.SpellCaster;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +26,9 @@ public final class ManaCastHandler {
     private static final Map<UUID, ResourceLocation> START_PAID = new HashMap<>();
     /** Channels to end at the end of the player's tick because the next channel tick is not affordable. */
     private static final Map<UUID, ResourceLocation> PENDING_END = new HashMap<>();
+    /** Game time of the last "not enough mana" notification per player (at most one per 10 ticks). */
+    private static final Map<UUID, Long> LAST_NOTIFY = new HashMap<>();
+    private static final long NOTIFY_INTERVAL = 10;
 
     private ManaCastHandler() {}
 
@@ -109,6 +114,7 @@ public final class ManaCastHandler {
             SpellCast.TargetSnapshot snapshot = caster.getInteractor().latestSnapshot(pending);
             caster.getInteractor().requestEnd(pending, snapshot != null ? snapshot : SpellCast.TargetSnapshot.EMPTY);
             process = caster.getInteractor().process();
+            notifyInsufficientMana(player);
         }
         ResourceLocation paid = START_PAID.get(player.getUUID());
         if (paid != null && (process == null || !process.id().equals(paid))) {
@@ -119,6 +125,21 @@ public final class ManaCastHandler {
     public static void onLogout(ServerPlayer player) {
         START_PAID.remove(player.getUUID());
         PENDING_END.remove(player.getUUID());
+        LAST_NOTIFY.remove(player.getUUID());
+    }
+
+    /**
+     * Tells the client that the server rejected a cast or ended a channel for lack of mana (message + bar flash).
+     * Sent at most once per {@value #NOTIFY_INTERVAL} ticks per player.
+     */
+    public static void notifyInsufficientMana(ServerPlayer player) {
+        long now = player.level().getGameTime();
+        Long last = LAST_NOTIFY.get(player.getUUID());
+        if (last != null && now - last < NOTIFY_INTERVAL && now >= last) {
+            return;
+        }
+        LAST_NOTIFY.put(player.getUUID(), now);
+        PacketDistributor.sendToPlayer(player, ManaInsufficientPayload.INSTANCE);
     }
 
     private static void spend(ServerPlayer player, double amount, CostSettings settings) {
