@@ -12,9 +12,9 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 public final class RunelessAttributes {
-    // Attribute icons (assets/runelessrpg/textures/attribute_icon/<attribute>.png, read by Apothic Attributes and Gearscope):
+    // Attribute icons (assets/runelessrpg/textures/attribute_icon/<attribute>.png, shown by Gearscope):
     // Clockwork Raven Studios, "RPG Icon Pack - 400+ Skills and Spells"; mana_cost recolored, the two leech icons with a "+".
-    // Credit them in the README credits list.
+    // Credited in CREDITS.md.
     private static final DeferredRegister<Attribute> ATTRIBUTES = DeferredRegister.create(Registries.ATTRIBUTE, RunelessRPG.MODID);
 
     public static final DeferredHolder<Attribute, Attribute> MAX_MANA = ATTRIBUTES.register("max_mana",

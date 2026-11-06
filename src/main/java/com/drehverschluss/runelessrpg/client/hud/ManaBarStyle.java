@@ -2,7 +2,7 @@ package com.drehverschluss.runelessrpg.client.hud;
 
 /** Look of the mana bar. */
 public enum ManaBarStyle {
-    /** MIKI when Miki's HUD is loaded, otherwise THIN. */
+    /** MIKI_DIAMOND when Miki's HUD is loaded, otherwise THIN. */
     AUTO,
     /** Narrow bar like the experience bar. */
     THIN,

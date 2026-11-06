@@ -14,9 +14,9 @@ import java.util.function.Supplier;
 public final class ManaAttachments {
     private static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, RunelessRPG.MODID);
 
-    /** Current mana of a player. Saved with the player, not copied on death (respawn refills it). */
+    /** Current mana of a player. Saved with the player, not copied on death (respawn refills it). NaN = never initialized. */
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<Double>> MANA = ATTACHMENTS.register("mana",
-            () -> AttachmentType.builder(() -> 0.0).serialize(Codec.DOUBLE).build());
+            () -> AttachmentType.builder(() -> Double.NaN).serialize(Codec.DOUBLE, value -> !Double.isNaN(value)).build());
 
     /** Runtime-only bookkeeping (sync, pending respawn refill), never saved. */
     public static final Supplier<AttachmentType<ManaSyncState>> SYNC_STATE = ATTACHMENTS.register("mana_sync_state",

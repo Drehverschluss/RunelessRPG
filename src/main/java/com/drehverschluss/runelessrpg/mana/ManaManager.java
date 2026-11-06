@@ -19,8 +19,19 @@ public final class ManaManager {
 
     private ManaManager() {}
 
+    /**
+     * Current mana. A player that never had mana (new player) starts full on the first access, whichever mod reads
+     * first; players with saved mana (also from older versions) keep their value.
+     */
     public static double getMana(Player player) {
-        return player.getData(ManaAttachments.MANA);
+        double mana = player.getData(ManaAttachments.MANA);
+        if (Double.isNaN(mana)) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                return initialize(serverPlayer);
+            }
+            return getMaxMana(player);
+        }
+        return mana;
     }
 
     public static double getMaxMana(Player player) {
@@ -106,11 +117,19 @@ public final class ManaManager {
 
     /** Fills a player that has never stored mana before. Returns true if the player was new. */
     static boolean initializeIfMissing(ServerPlayer player) {
-        if (player.hasData(ManaAttachments.MANA)) {
+        if (!Double.isNaN(player.getData(ManaAttachments.MANA))) {
             return false;
         }
-        player.setData(ManaAttachments.MANA, getMaxMana(player));
+        initialize(player);
         return true;
+    }
+
+    // Base values first: another mod may read before our login handler has applied the configured max mana
+    private static double initialize(ServerPlayer player) {
+        ManaEvents.applyBaseValues(player);
+        double max = getMaxMana(player);
+        player.setData(ManaAttachments.MANA, max);
+        return max;
     }
 
     /** Lowers the stored mana to the current maximum, e.g. after armor with max mana was removed. */

@@ -120,7 +120,8 @@ public final class RunelessClientConfig {
                 .comment("NONE, CURRENT (\"14\"), CURRENT_MAX (\"14 / 20\"), PERCENT (\"70%\"); from 1000 shortened (\"1.5k\")")
                 .defineEnum("textMode", TextMode.CURRENT);
         TEXT_FONT = builder
-                .comment("VANILLA = the Minecraft font, PIXEL = own small pixel digits")
+                .comment("VANILLA = the Minecraft font, PIXEL = own small pixel digits",
+                        "(VANILLA falls back to the pixel digits in a half diamond that is too small for the Minecraft font)")
                 .defineEnum("textFont", TextFont.VANILLA);
         TEXT_OUTLINE = builder.comment("Dark 1 px outline around the number (otherwise a drop shadow)").define("textOutline", true);
         TEXT_VISIBILITY = builder

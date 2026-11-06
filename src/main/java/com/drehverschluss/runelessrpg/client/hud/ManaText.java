@@ -314,22 +314,13 @@ public final class ManaText {
         List<Candidate> candidates = candidates(pixelFont, style, p.textScale());
         switch (style) {
             case MIKI_DIAMOND -> {
-                // The size is chosen for the docked diamond and kept when the display is moved; the number then only
-                // moves with it and is hidden if the visible part of the diamond is too small for it.
-                for (TextMode m : modes) {
-                    String text = text(m, mana, max);
-                    for (Candidate candidate : candidates) {
-                        if (fitInDiamond(text, pixelFont, candidate, outline, bar, p, screenWidth, screenHeight, false) == null) {
-                            continue;
-                        }
-                        Layout layout = fitInDiamond(text, pixelFont, candidate, outline, bar, p, screenWidth, screenHeight, true);
-                        if (layout != null) {
-                            return layout;
-                        }
-                        break;
-                    }
+                Layout layout = diamondLayout(modes, pixelFont, candidates, outline, bar, p, screenWidth, screenHeight, mana, max);
+                if (layout == null && !pixelFont) {
+                    // The Minecraft font does not fit (e.g. small half diamond): the pixel digits do instead of nothing
+                    layout = diamondLayout(modes, true, candidates(true, style, p.textScale()), outline, bar, p,
+                            screenWidth, screenHeight, mana, max);
                 }
-                return null;
+                return layout;
             }
             case MIKI -> {
                 double barWidth = p.width() * s;
@@ -369,6 +360,29 @@ public final class ManaText {
                         ref.y() - ref.alignY() * metrics.boxHeight() * candidate.scale(), outline);
             }
         }
+    }
+
+    /**
+     * The size is chosen for the docked diamond and kept when the display is moved; the number then only moves with it
+     * and is hidden if the visible part of the diamond is too small for it.
+     */
+    @Nullable
+    private static Layout diamondLayout(TextMode[] modes, boolean pixelFont, List<Candidate> candidates, boolean outline, ManaBar bar,
+                                        ManaBar.Placement p, int screenWidth, int screenHeight, double mana, double max) {
+        for (TextMode m : modes) {
+            String text = text(m, mana, max);
+            for (Candidate candidate : candidates) {
+                if (fitInDiamond(text, pixelFont, candidate, outline, bar, p, screenWidth, screenHeight, false) == null) {
+                    continue;
+                }
+                Layout layout = fitInDiamond(text, pixelFont, candidate, outline, bar, p, screenWidth, screenHeight, true);
+                if (layout != null) {
+                    return layout;
+                }
+                break;
+            }
+        }
+        return null;
     }
 
     /**
