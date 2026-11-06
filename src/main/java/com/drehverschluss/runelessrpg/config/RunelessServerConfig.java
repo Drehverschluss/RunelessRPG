@@ -45,6 +45,15 @@ public final class RunelessServerConfig {
     public static final ModConfigSpec.DoubleValue SPELL_INFINITY_COST_REDUCTION;
     public static final ModConfigSpec.DoubleValue SPELL_INFINITY_FLOOR_REDUCTION;
 
+    public static final ModConfigSpec.DoubleValue MANA_POTION_PERCENT_PER_LEVEL;
+    public static final ModConfigSpec.DoubleValue MAGICAL_STABILITY_MANA_COST;
+    public static final ModConfigSpec.IntValue MAGICAL_STABILITY_DURATION;
+    public static final ModConfigSpec.IntValue LONG_MAGICAL_STABILITY_DURATION;
+    public static final ModConfigSpec.IntValue BORROWED_POWER_DURATION;
+    public static final ModConfigSpec.DoubleValue BORROWED_POWER_DEBT_PERCENT;
+    public static final ModConfigSpec.DoubleValue BACKLASH_DAMAGE_PER_10_PERCENT;
+    public static final ModConfigSpec.DoubleValue BACKLASH_MAX_DAMAGE;
+
     /** Effect of the enchantment spell_engine:spell_infinity on mana costs. */
     public enum SpellInfinityMode {
         /** Lowers the cost factor and its floor. */
@@ -161,7 +170,7 @@ public final class RunelessServerConfig {
                 .comment("Spell mana leech: every further target hit in the same game tick gives only this percentage (0 = first target only)")
                 .defineInRange("spellManaLeechExtraTargetPercent", 25.0, 0.0, 100.0);
         LEECH_CAP_AT_TARGET_HEALTH = builder
-                .comment("Count at most the health the target had before the hit (no mana from overkill damage)")
+                .comment("Count at most the health + absorption the target had before the hit (no mana from overkill damage)")
                 .define("leechCapAtTargetHealth", true);
         builder.pop();
 
@@ -177,6 +186,37 @@ public final class RunelessServerConfig {
         SPELL_INFINITY_FLOOR_REDUCTION = builder
                 .comment("Lowers minManaCostPercent by this many points (never below 0)")
                 .defineInRange("floorReductionPercent", 20.0, 0.0, 100.0);
+        builder.pop();
+
+        builder.comment("Potions. Durations also apply to potions that already exist (they are read when a potion takes effect).",
+                "Brewing ingredients are in config/runelessrpg-common.toml").push("potions");
+        MANA_POTION_PERCENT_PER_LEVEL = builder
+                .comment("Mana restoration: (level) x this percentage of max mana (Potion of Mana I = 25%, II = 50%)",
+                        "Pays debt back first, never above max mana. Splash potions restore less at the edge of the splash, like Instant Health")
+                .defineInRange("manaPotionPercentPerLevel", 25.0, 0.0, 1000.0);
+        MAGICAL_STABILITY_MANA_COST = builder
+                .comment("Magical Stability: runelessrpg:mana_cost -this value per level (0.15 = -15%). The floor minManaCostPercent still applies")
+                .defineInRange("magicalStabilityManaCost", 0.15, 0.0, 10.0);
+        MAGICAL_STABILITY_DURATION = builder
+                .comment("Potion of Magical Stability: duration in seconds")
+                .defineInRange("magicalStabilityDurationSeconds", 180, 1, 86400);
+        LONG_MAGICAL_STABILITY_DURATION = builder
+                .comment("Long Potion of Magical Stability (redstone): duration in seconds")
+                .defineInRange("longMagicalStabilityDurationSeconds", 480, 1, 86400);
+        BORROWED_POWER_DURATION = builder
+                .comment("Potion of Borrowed Power: duration in seconds")
+                .defineInRange("borrowedPowerDurationSeconds", 30, 1, 86400);
+        BORROWED_POWER_DEBT_PERCENT = builder
+                .comment("Borrowed Power: spells may take mana down to -(this percentage of max mana), also in manaMode FULL_COST.",
+                        "If the mana mode itself allows more (DEBT, or a larger DEBT_LIMIT), the more generous rule applies")
+                .defineInRange("borrowedPowerDebtPercent", 50.0, 0.0, 1000.0);
+        BACKLASH_DAMAGE_PER_10_PERCENT = builder
+                .comment("When Borrowed Power ends (runs out, milk, /effect clear) with mana below 0: damage per 10% of max mana in debt",
+                        "Damage type runelessrpg:mana_backlash ignores armor and enchantments. The debt stays, regeneration pays it back")
+                .defineInRange("backlashDamagePer10Percent", 2.0, 0.0, 1000.0);
+        BACKLASH_MAX_DAMAGE = builder
+                .comment("Maximum backlash damage")
+                .defineInRange("backlashMaxDamage", 10.0, 0.0, 100000.0);
         builder.pop();
 
         SPEC = builder.build();

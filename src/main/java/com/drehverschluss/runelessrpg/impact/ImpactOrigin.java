@@ -11,6 +11,11 @@ public enum ImpactOrigin {
      * projectiles with the player as owner, so the hit itself looks like a player hit).
      */
     SUMMON,
+    /**
+     * An entity a spell placed with Spell Engine's SPAWN impact action (lasting effect: no mana leech), and projectiles
+     * such an entity launches.
+     */
+    SPAWNED,
     /** A stashed spell released by a trigger ({@code SpellStashHelper.useStashes}). */
     STASH
 }

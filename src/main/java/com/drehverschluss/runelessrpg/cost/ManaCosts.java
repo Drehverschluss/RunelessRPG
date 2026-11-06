@@ -8,6 +8,7 @@ import com.drehverschluss.runelessrpg.config.RunelessServerConfig.SpellInfinityM
 import com.drehverschluss.runelessrpg.cost.CastContext.Stage;
 import com.drehverschluss.runelessrpg.cost.SpellCostInfo.Source;
 import com.drehverschluss.runelessrpg.mana.ManaManager;
+import com.drehverschluss.runelessrpg.potion.BorrowedPower;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -209,35 +210,46 @@ public final class ManaCosts {
         }
         double mana = ManaManager.getMana(player);
         if (!info.channeled()) {
-            return affordable(settings, mana, total, total);
+            return affordable(player, settings, mana, total, total);
         }
         double perTick = costPerChannelTick(player, holder, total);
         return switch (settings.channelCostMode()) {
             case DRAIN -> switch (stage) {
-                case START -> affordable(settings, mana, total * settings.channelStartPercent() / 100.0 + perTick, total);
-                case CHANNEL_TICK -> affordable(settings, mana, perTick, total);
+                case START -> affordable(player, settings, mana, total * settings.channelStartPercent() / 100.0 + perTick, total);
+                case CHANNEL_TICK -> affordable(player, settings, mana, perTick, total);
                 default -> true;
             };
-            case START -> stage != Stage.START || affordable(settings, mana, total, total);
-            case END -> affordable(settings, mana, total, total);
+            case START -> stage != Stage.START || affordable(player, settings, mana, total, total);
+            case END -> affordable(player, settings, mana, total, total);
         };
     }
 
     /**
      * Mana mode check. {@code reference} is the full cost of the spell (DEBT_LIMIT allows debt up to a percentage of it).
+     * Borrowed Power allows debt down to a percentage of max mana in every mode; the more generous rule wins.
      */
-    public static boolean affordable(CostSettings settings, double mana, double amount, double reference) {
+    public static boolean affordable(Player player, CostSettings settings, double mana, double amount, double reference) {
         if (amount <= 0.0) {
             return true;
         }
-        return switch (settings.manaMode()) {
-            case FULL_COST -> mana + EPSILON >= amount;
-            case DEBT -> mana > EPSILON;
-            case DEBT_LIMIT -> mana - amount + EPSILON >= -(settings.maxDebtPercent() / 100.0 * reference);
-        };
+        if (settings.manaMode() == ManaMode.DEBT && mana > EPSILON) {
+            return true;
+        }
+        return mana - amount + EPSILON >= -debtLimit(player, settings, reference);
     }
 
-    public static boolean allowsDebt(CostSettings settings) {
-        return settings.manaMode() != ManaMode.FULL_COST;
+    /**
+     * How far below 0 a cast with full cost {@code reference} may take the mana right now (positive amount): the
+     * DEBT_LIMIT of the mana mode or Borrowed Power, whichever is larger. DEBT mode has no limit (cast while mana is
+     * above 0), it is not included here.
+     */
+    public static double debtLimit(Player player, CostSettings settings, double reference) {
+        double modeLimit = settings.manaMode() == ManaMode.DEBT_LIMIT ? settings.maxDebtPercent() / 100.0 * reference : 0.0;
+        return Math.max(modeLimit, BorrowedPower.debtLimit(player, settings));
+    }
+
+    /** Whether paying for spells may take the mana below 0 (a debt mode, or Borrowed Power). */
+    public static boolean allowsDebt(Player player, CostSettings settings) {
+        return settings.manaMode() != ManaMode.FULL_COST || BorrowedPower.isActive(player);
     }
 }

@@ -6,6 +6,8 @@ import com.drehverschluss.runelessrpg.config.RunelessServerConfig.ManaMode;
 import com.drehverschluss.runelessrpg.config.RunelessServerConfig.SpellInfinityMode;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.server.MinecraftServer;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,11 +32,18 @@ public record CostSettings(
         boolean overchargeAffectsHealing,
         SpellInfinityMode spellInfinityMode,
         double spellInfinityCostReduction,
-        double spellInfinityFloorReduction) {
+        double spellInfinityFloorReduction,
+        double manaPotionPercentPerLevel,
+        double magicalStabilityManaCost,
+        int magicalStabilityDurationSeconds,
+        int longMagicalStabilityDurationSeconds,
+        int borrowedPowerDurationSeconds,
+        double borrowedPowerDebtPercent) {
 
     public static final CostSettings DEFAULTS = new CostSettings(ManaMode.FULL_COST, 50.0, true, 50.0,
             List.of(4.0, 5.0, 7.0, 10.0, 14.0, 18.0), true, 1.0, true, 0.75, true, 0.5, false, 1.0, ChannelCostMode.DRAIN, 0.0,
-            0.5, true, SpellInfinityMode.REDUCE_COST, 20.0, 20.0);
+            0.5, true, SpellInfinityMode.REDUCE_COST, 20.0, 20.0,
+            25.0, 0.15, 180, 480, 30, 50.0);
 
     public static final StreamCodec<FriendlyByteBuf, CostSettings> STREAM_CODEC = StreamCodec.of(CostSettings::write, CostSettings::read);
 
@@ -45,6 +54,18 @@ public record CostSettings(
     }
 
     public static CostSettings client() {
+        return clientSettings;
+    }
+
+    /**
+     * Settings for code that does not know its side (potion durations, effect attribute modifiers): the live server
+     * config on the server thread, otherwise the copy the client received (in singleplayer both are the same values).
+     */
+    public static CostSettings current() {
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        if (server != null && server.isSameThread() && RunelessServerConfig.SPEC.isLoaded()) {
+            return server();
+        }
         return clientSettings;
     }
 
@@ -73,7 +94,13 @@ public record CostSettings(
                 RunelessServerConfig.OVERCHARGE_AFFECTS_HEALING.get(),
                 RunelessServerConfig.SPELL_INFINITY_MODE.get(),
                 RunelessServerConfig.SPELL_INFINITY_COST_REDUCTION.get(),
-                RunelessServerConfig.SPELL_INFINITY_FLOOR_REDUCTION.get());
+                RunelessServerConfig.SPELL_INFINITY_FLOOR_REDUCTION.get(),
+                RunelessServerConfig.MANA_POTION_PERCENT_PER_LEVEL.get(),
+                RunelessServerConfig.MAGICAL_STABILITY_MANA_COST.get(),
+                RunelessServerConfig.MAGICAL_STABILITY_DURATION.get(),
+                RunelessServerConfig.LONG_MAGICAL_STABILITY_DURATION.get(),
+                RunelessServerConfig.BORROWED_POWER_DURATION.get(),
+                RunelessServerConfig.BORROWED_POWER_DEBT_PERCENT.get());
     }
 
     /** Tier table lookup: higher tiers use the last value, negative tiers the first. */
@@ -109,6 +136,12 @@ public record CostSettings(
         buf.writeEnum(s.spellInfinityMode);
         buf.writeDouble(s.spellInfinityCostReduction);
         buf.writeDouble(s.spellInfinityFloorReduction);
+        buf.writeDouble(s.manaPotionPercentPerLevel);
+        buf.writeDouble(s.magicalStabilityManaCost);
+        buf.writeVarInt(s.magicalStabilityDurationSeconds);
+        buf.writeVarInt(s.longMagicalStabilityDurationSeconds);
+        buf.writeVarInt(s.borrowedPowerDurationSeconds);
+        buf.writeDouble(s.borrowedPowerDebtPercent);
     }
 
     private static CostSettings read(FriendlyByteBuf buf) {
@@ -125,6 +158,7 @@ public record CostSettings(
                 buf.readBoolean(), buf.readDouble(), buf.readBoolean(), buf.readDouble(),
                 buf.readBoolean(), buf.readDouble(), buf.readBoolean(), buf.readDouble(),
                 buf.readEnum(ChannelCostMode.class), buf.readDouble(),
-                buf.readDouble(), buf.readBoolean(), buf.readEnum(SpellInfinityMode.class), buf.readDouble(), buf.readDouble());
+                buf.readDouble(), buf.readBoolean(), buf.readEnum(SpellInfinityMode.class), buf.readDouble(), buf.readDouble(),
+                buf.readDouble(), buf.readDouble(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readDouble());
     }
 }

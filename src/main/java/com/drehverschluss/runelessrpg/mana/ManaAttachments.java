@@ -1,6 +1,7 @@
 package com.drehverschluss.runelessrpg.mana;
 
 import com.drehverschluss.runelessrpg.RunelessRPG;
+import com.drehverschluss.runelessrpg.impact.ImpactOrigin;
 import com.mojang.serialization.Codec;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
@@ -27,6 +28,14 @@ public final class ManaAttachments {
      */
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<Double>> OVERCHARGE_SNAPSHOT = ATTACHMENTS.register(
             "overcharge_snapshot", () -> AttachmentType.builder(() -> 1.0).serialize(Codec.DOUBLE).build());
+
+    /**
+     * Origin of everything an entity causes ({@link ImpactOrigin#SPAWNED} for spell-spawned entities, the inherited
+     * origin for projectiles of summons, spawned entities and clouds). Saved with the entity, never sent to clients.
+     */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<ImpactOrigin>> IMPACT_ORIGIN = ATTACHMENTS.register(
+            "impact_origin", () -> AttachmentType.builder(() -> ImpactOrigin.DIRECT)
+                    .serialize(Codec.STRING.xmap(ImpactOrigin::valueOf, ImpactOrigin::name)).build());
 
     private ManaAttachments() {}
 

@@ -14,6 +14,7 @@ import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
@@ -26,7 +27,8 @@ import java.util.UUID;
 
 /**
  * Mana leech (weapon damage, {@code runelessrpg:mana_leech}) and spell mana leech (direct spell hits,
- * {@code runelessrpg:spell_mana_leech}), from the real damage after armor ({@link LivingDamageEvent.Post}).
+ * {@code runelessrpg:spell_mana_leech}), from the real damage after armor ({@link LivingDamageEvent.Post}), including
+ * the part the target's absorption hearts took.
  * <p>
  * Spell Engine hits are recognized by the {@link SpellHitContext} set around {@code Entity.hurt} in
  * {@code performImpact} (the damage events fire synchronously inside it).
@@ -47,7 +49,7 @@ public final class ManaLeech {
 
     private static final Map<UUID, Counter> WEAPON_HITS = new HashMap<>();
     private static final Map<UUID, Counter> SPELL_HITS = new HashMap<>();
-    /** Health of targets right before the damage is applied (Pre → Post of the same hit). */
+    /** Health + absorption of targets right before the damage is applied (Pre → Post of the same hit). */
     private static final Map<LivingEntity, Float> HEALTH_BEFORE = new IdentityHashMap<>();
 
     private ManaLeech() {}
@@ -65,7 +67,7 @@ public final class ManaLeech {
 
     private static void onDamagePre(LivingDamageEvent.Pre event) {
         if (!event.getEntity().level().isClientSide()) {
-            HEALTH_BEFORE.put(event.getEntity(), event.getEntity().getHealth());
+            HEALTH_BEFORE.put(event.getEntity(), event.getEntity().getHealth() + event.getEntity().getAbsorptionAmount());
         }
     }
 
@@ -79,7 +81,8 @@ public final class ManaLeech {
         if (!(source.getEntity() instanceof ServerPlayer player) || target == player || target.getType().is(NO_MANA_LEECH)) {
             return;
         }
-        float damage = event.getNewDamage();
+        // Post's new damage is what reached the health; the part absorption hearts took is the ABSORPTION reduction
+        float damage = event.getNewDamage() + Math.max(0.0F, event.getReduction(DamageContainer.Reduction.ABSORPTION));
         if (damage <= 0.0F) {
             return;
         }
@@ -97,15 +100,19 @@ public final class ManaLeech {
     }
 
     /**
-     * Weapon damage: damage type in {@code #runelessrpg:mana_leech/weapon_damage}, not magic; inside a Spell Engine hit
-     * only if the player himself cast it and it is neither a cloud nor a summon's projectile (summons like the Fire Hydra
-     * deal their damage as the player, the hit context tells them apart).
+     * Weapon damage: damage type in {@code #runelessrpg:mana_leech/weapon_damage}, not magic. Inside a Spell Engine hit
+     * only if the player himself cast it, directly or from a stash (summons like the Fire Hydra deal their damage as the
+     * player, the hit context tells them apart). Outside of a hit only if no cloud, summon projectile or spell-spawned
+     * entity is acting right now.
      */
     static boolean isWeaponHit(DamageSource source, SpellHitContext.Hit hit, ServerPlayer player) {
         if (!source.is(WEAPON_DAMAGE) || source.is(SPELL_DAMAGE)) {
             return false;
         }
-        return hit == null || hit.givenCaster() == player && (hit.origin() == ImpactOrigin.DIRECT || hit.origin() == ImpactOrigin.STASH);
+        if (hit == null) {
+            return SpellHitContext.origin() == ImpactOrigin.DIRECT;
+        }
+        return hit.givenCaster() == player && (hit.origin() == ImpactOrigin.DIRECT || hit.origin() == ImpactOrigin.STASH);
     }
 
     /**

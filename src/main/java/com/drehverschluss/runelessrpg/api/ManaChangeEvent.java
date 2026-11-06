@@ -35,7 +35,12 @@ public class ManaChangeEvent extends Event {
          * Spell mana leech ({@code runelessrpg:spell_mana_leech}): a part of the damage of a direct spell hit came back
          * as mana. Never above max mana; pays back debt.
          */
-        SPELL_LEECH
+        SPELL_LEECH,
+        /**
+         * Potion of Mana ({@code runelessrpg:mana_restore}): drunk, splash, lingering cloud or tipped arrow. Never above
+         * max mana; pays back debt.
+         */
+        POTION
     }
 
     private final Player player;
@@ -60,7 +65,7 @@ public class ManaChangeEvent extends Event {
         return oldMana;
     }
 
-    /** @return the mana after the change; clamped to {@code 0 … max_mana}, except spells in a debt mode (may be negative) */
+    /** @return the mana after the change; clamped to {@code 0 … max_mana}, except spells in a debt mode or with Borrowed Power (may be negative) */
     public double getNewMana() {
         return newMana;
     }

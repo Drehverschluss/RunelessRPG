@@ -2,11 +2,13 @@ package com.drehverschluss.runelessrpg.command;
 
 import com.drehverschluss.runelessrpg.api.ManaChangeEvent;
 import com.drehverschluss.runelessrpg.attribute.RunelessAttributes;
+import com.drehverschluss.runelessrpg.config.RunelessServerConfig;
 import com.drehverschluss.runelessrpg.cost.CostSettings;
 import com.drehverschluss.runelessrpg.cost.ManaCosts;
 import com.drehverschluss.runelessrpg.cost.SpellCostInfo;
 import com.drehverschluss.runelessrpg.cost.SpellCostReport;
 import com.drehverschluss.runelessrpg.mana.ManaManager;
+import com.drehverschluss.runelessrpg.potion.BorrowedPower;
 import com.drehverschluss.runelessrpg.util.CostFormat;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
@@ -125,6 +127,11 @@ public final class RunelessCommands {
             source.sendSuccess(() -> Component.translatable("commands.runelessrpg.cost.channel", ticks,
                     CostFormat.format(total / ticks), settings.channelCostMode().name(), CostFormat.format(settings.channelStartPercent())), false);
         }
+        double debtLimit = ManaCosts.debtLimit(player, settings, total);
+        double borrowedLimit = BorrowedPower.debtLimit(player, settings);
+        source.sendSuccess(() -> Component.translatable("commands.runelessrpg.cost.debt", settings.manaMode().name(),
+                settings.manaMode() == RunelessServerConfig.ManaMode.DEBT ? "-" : CostFormat.format(-debtLimit),
+                Component.translatable(BorrowedPower.isActive(player) ? "gui.yes" : "gui.no"), CostFormat.format(-borrowedLimit)), false);
         return 1;
     }
 

@@ -12,7 +12,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.spell_engine.api.entity.SpellEntity;
+import net.minecraft.world.phys.Vec3;
 import net.spell_engine.api.spell.Spell;
 import net.spell_engine.api.spell.summon.SpellSummoned;
 import net.spell_engine.internals.SpellExecution;
@@ -23,17 +23,20 @@ import org.spongepowered.asm.mixin.injection.At;
 /**
  * Overcharge and the hit context for mana leech, in the one place where Spell Engine knows which spell hits and who
  * cast it ({@code givenCaster}: the player, or a summon for its own spells). Also stamps the overcharge snapshot on
- * summons and spell-spawned entities.
+ * summons and spell-spawned entities (any entity placed by the SPAWN action, also ones that do not implement
+ * {@code SpellEntity.Spawned}), and marks the spawned ones with origin SPAWNED. Projectiles with an own origin (summon,
+ * spawned entity, cloud) hit with that origin.
  */
 @Mixin(value = SpellImpacts.class, remap = false)
 public abstract class SpellImpactsMixin {
     @WrapMethod(method = "projectileImpact")
     private static boolean runelessrpg$projectileOrigin(LivingEntity caster, Entity projectile, Entity target, Holder<Spell> spellEntry,
                                                         SpellExecution.ImpactContext context, Operation<Boolean> original) {
-        if (!Overcharge.isRelayedProjectile(projectile)) {
+        ImpactOrigin origin = Overcharge.originOf(projectile);
+        if (origin == null) {
             return original.call(caster, projectile, target, spellEntry, context);
         }
-        SpellHitContext.pushOrigin(ImpactOrigin.SUMMON, projectile);
+        SpellHitContext.pushOrigin(origin, projectile);
         try {
             return original.call(caster, projectile, target, spellEntry, context);
         } finally {
@@ -44,11 +47,12 @@ public abstract class SpellImpactsMixin {
     @WrapMethod(method = "fallImpact")
     private static void runelessrpg$fallOrigin(LivingEntity caster, Entity projectile, Holder<Spell> spellEntry,
                                                SpellExecution.ImpactContext context, Operation<Void> original) {
-        if (!Overcharge.isRelayedProjectile(projectile)) {
+        ImpactOrigin origin = Overcharge.originOf(projectile);
+        if (origin == null) {
             original.call(caster, projectile, spellEntry, context);
             return;
         }
-        SpellHitContext.pushOrigin(ImpactOrigin.SUMMON, projectile);
+        SpellHitContext.pushOrigin(origin, projectile);
         try {
             original.call(caster, projectile, spellEntry, context);
         } finally {
@@ -83,12 +87,12 @@ public abstract class SpellImpactsMixin {
     }
 
     @WrapOperation(method = "performImpact", at = @At(value = "INVOKE",
-            target = "Lnet/spell_engine/api/entity/SpellEntity$Spawned;onSpawnedBySpell(Lnet/spell_engine/api/entity/SpellEntity$Spawned$Args;)V"))
-    private static void runelessrpg$stampSpawned(SpellEntity.Spawned spawned, SpellEntity.Spawned.Args args, Operation<Void> original) {
-        original.call(spawned, args);
-        if (spawned instanceof Entity entity) {
-            Overcharge.stamp(entity, args.owner(), args.spell());
-        }
+            target = "Lnet/spell_engine/internals/delivery/EntityPlacements;applyEntityPlacement(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/phys/Vec3;Lnet/spell_engine/api/spell/Spell$EntityPlacement;)V"))
+    private static void runelessrpg$stampSpawned(Entity entity, Entity caster, Vec3 position, Spell.EntityPlacement placement,
+                                                 Operation<Void> original, @Local(argsOnly = true) Holder<Spell> spellEntry) {
+        original.call(entity, caster, position, placement);
+        Overcharge.stamp(entity, caster, spellEntry);
+        Overcharge.markSpawned(entity);
     }
 
     @WrapOperation(method = "summon", at = @At(value = "INVOKE",

@@ -2,6 +2,7 @@ package com.drehverschluss.runelessrpg;
 
 import com.drehverschluss.runelessrpg.attribute.RunelessAttributes;
 import com.drehverschluss.runelessrpg.command.RunelessCommands;
+import com.drehverschluss.runelessrpg.config.RunelessCommonConfig;
 import com.drehverschluss.runelessrpg.config.RunelessServerConfig;
 import com.drehverschluss.runelessrpg.cost.CostEvents;
 import com.drehverschluss.runelessrpg.impact.ManaLeech;
@@ -10,6 +11,7 @@ import com.drehverschluss.runelessrpg.item.RunelessItems;
 import com.drehverschluss.runelessrpg.mana.ManaAttachments;
 import com.drehverschluss.runelessrpg.mana.ManaEvents;
 import com.drehverschluss.runelessrpg.network.RunelessNetwork;
+import com.drehverschluss.runelessrpg.potion.RunelessPotions;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -31,8 +33,10 @@ public class RunelessRPG {
 
     public RunelessRPG(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.SERVER, RunelessServerConfig.SPEC);
+        modContainer.registerConfig(ModConfig.Type.COMMON, RunelessCommonConfig.SPEC);
         RunelessAttributes.register(modEventBus);
         RunelessItems.register(modEventBus);
+        RunelessPotions.register(modEventBus);
         ManaAttachments.register(modEventBus);
         RunelessNetwork.register(modEventBus);
         ManaEvents.register(modEventBus);

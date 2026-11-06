@@ -144,7 +144,7 @@ public final class ManaCastHandler {
 
     private static void spend(ServerPlayer player, double amount, CostSettings settings) {
         if (amount > 0.0) {
-            ManaManager.spendForSpell(player, amount, ManaCosts.allowsDebt(settings));
+            ManaManager.spendForSpell(player, amount, ManaCosts.allowsDebt(player, settings));
         }
     }
 

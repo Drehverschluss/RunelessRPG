@@ -9,7 +9,9 @@
     "SpellCloudMixin",
     "SpellExecutionMixin",
     "SpellImpactsMixin",
-    "SpellStashHelperMixin"
+    "SpellProjectileMixin",
+    "SpellStashHelperMixin",
+    "ServerLevelMixin"
   ],
   "client": [
     "client.HudMessagesMixin",
