@@ -32,8 +32,10 @@ public final class ManaHudTooltip {
         ManaBar bar = ManaBar.INSTANCE;
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (player == null || !bar.shouldRender()
-                || !bar.hitTest(mouseX, mouseY, event.getGuiGraphics().guiWidth(), event.getGuiGraphics().guiHeight())) {
+        int screenWidth = event.getGuiGraphics().guiWidth();
+        int screenHeight = event.getGuiGraphics().guiHeight();
+        boolean onBar = bar.isVisible() && bar.hitTest(mouseX, mouseY, screenWidth, screenHeight);
+        if (player == null || !bar.shouldRender() || !onBar && !ManaText.INSTANCE.hitTest(mouseX, mouseY, screenWidth, screenHeight)) {
             return;
         }
         event.getGuiGraphics().renderComponentTooltip(mc.font, lines(player), event.getMouseX(), event.getMouseY());

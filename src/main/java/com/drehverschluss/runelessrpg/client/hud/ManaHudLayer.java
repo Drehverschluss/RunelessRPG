@@ -6,8 +6,8 @@ import net.minecraft.client.gui.LayeredDraw;
 
 /**
  * GUI layers of the mana bar. Two layers are registered: one below the vanilla hotbar (behind the hotbar and Miki's HUD,
- * which Miki draws directly above the hotbar) and one above it; the config decides which one draws. The half diamond
- * docked at Miki's diamond always draws behind it. Behind Miki's HUD the number is drawn in the front layer.
+ * which Miki draws directly above the hotbar) and one above it; the config decides which one draws the bar. The half
+ * diamond docked at Miki's diamond always draws behind it. The number ({@link ManaText}) is always drawn in front.
  */
 public final class ManaHudLayer implements LayeredDraw.Layer {
     public static final ManaHudLayer BEHIND = new ManaHudLayer(true);
@@ -26,13 +26,13 @@ public final class ManaHudLayer implements LayeredDraw.Layer {
             return;
         }
         boolean drawsBehind = bar.drawsBehind();
-        if (behind && drawsBehind) {
-            bar.render(graphics, bar.textInFront() ? ManaBar.Pass.SHAPE : ManaBar.Pass.ALL);
-        } else if (!behind && !drawsBehind) {
-            bar.render(graphics, ManaBar.Pass.ALL);
-        } else if (!behind && bar.textInFront()) {
-            // Behind Miki's HUD the number would be covered by Miki's vines; it stays readable in front
-            bar.render(graphics, ManaBar.Pass.TEXT);
+        if (behind) {
+            if (drawsBehind) {
+                bar.render(graphics, ManaBar.Pass.SHAPE);
+            }
+        } else {
+            // The number is always in front (Miki's vines would cover it otherwise)
+            bar.render(graphics, drawsBehind ? ManaBar.Pass.TEXT : ManaBar.Pass.ALL);
         }
     }
 }

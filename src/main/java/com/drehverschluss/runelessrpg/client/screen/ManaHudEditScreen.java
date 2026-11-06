@@ -3,6 +3,7 @@ package com.drehverschluss.runelessrpg.client.screen;
 import com.drehverschluss.runelessrpg.client.config.RunelessClientConfig;
 import com.drehverschluss.runelessrpg.client.hud.ManaBar;
 import com.drehverschluss.runelessrpg.client.hud.ManaBarStyle;
+import com.drehverschluss.runelessrpg.client.hud.ManaText;
 import com.drehverschluss.runelessrpg.client.hud.TextMode;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -17,10 +18,12 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Layout editor: drag the mana bar with the mouse, scroll to scale, right click to show / hide, arrow keys to nudge
- * (shift = 10 px). The layout is saved when the screen is closed.
+ * Layout editor for the two HUD elements, the mana display and the mana number ("Mana Text"): drag to move, scroll to
+ * scale (the number in sharp steps), right click to show / hide, arrow keys to nudge (shift = 10 px). Dragging the
+ * display moves an attached number along; Ctrl while releasing the number (or the Detach/Attach button) detaches or
+ * attaches it. The layout is saved when the screen is closed.
  * <p>
- * Based on {@code HudEditScreen} from Perilscope (same author, MIT), reduced to the single mana bar.
+ * Based on {@code HudEditScreen} from Perilscope (same author, MIT).
  */
 public final class ManaHudEditScreen extends Screen {
     private static final int SNAP_DISTANCE = 4;
@@ -31,15 +34,22 @@ public final class ManaHudEditScreen extends Screen {
     private static final int BACKGROUND_COLOR = 0x50000000;
     private static final int OUTLINE_COLOR = 0xFFFFFFFF;
     private static final int SELECTED_OUTLINE_COLOR = 0xFFFFFF55;
+    private static final int TEXT_OUTLINE_COLOR = 0xFF55FFFF;
+    private static final int IDLE_OUTLINE_COLOR = 0x60FFFFFF;
     private static final int GUIDE_COLOR = 0xA0FFFF55;
     private static final float SCALE_STEP = 0.1F;
 
+    /** The two elements the editor works on. */
+    public enum Element { BAR, TEXT }
+
     @Nullable
     private final Screen parent;
-    private boolean selected;
-    private boolean dragging;
-    private int grabOffsetX;
-    private int grabOffsetY;
+    @Nullable
+    private Element selected;
+    @Nullable
+    private Element dragging;
+    private double grabOffsetX;
+    private double grabOffsetY;
     private int guideX = -1;
     private int guideY = -1;
     private int hintY;
@@ -47,6 +57,7 @@ public final class ManaHudEditScreen extends Screen {
     private Button styleButton;
     private Button textButton;
     private Button visibleButton;
+    private Button attachButton;
 
     public ManaHudEditScreen(@Nullable Screen parent) {
         super(Component.translatable("runelessrpg.editor.title"));
@@ -70,10 +81,12 @@ public final class ManaHudEditScreen extends Screen {
             RunelessClientConfig.TEXT_MODE.set(modes[(RunelessClientConfig.TEXT_MODE.get().ordinal() + 1) % modes.length]);
         });
         visibleButton = optionButton(() -> ManaBar.INSTANCE.setVisible(!ManaBar.INSTANCE.isVisible()));
-        int bottomY = layoutOptionButtons(List.of(styleButton, textButton, visibleButton), optionsY);
+        attachButton = optionButton(this::toggleAttached);
+        int bottomY = layoutOptionButtons(List.of(styleButton, textButton, visibleButton, attachButton), optionsY);
 
         addRenderableWidget(Button.builder(Component.translatable("runelessrpg.editor.reset"), button -> {
                     ManaBar.INSTANCE.resetLayout();
+                    ManaText.INSTANCE.resetLayout();
                     refreshButtons();
                 })
                 .bounds(width / 2 - BUTTON_WIDTH - 2, bottomY, BUTTON_WIDTH, BUTTON_HEIGHT).build());
@@ -110,6 +123,15 @@ public final class ManaHudEditScreen extends Screen {
                 Component.translatable("runelessrpg.text_mode." + RunelessClientConfig.TEXT_MODE.get().name().toLowerCase(Locale.ROOT))));
         visibleButton.setMessage(CommonComponents.optionStatus(Component.translatable("runelessrpg.editor.option.visible"),
                 ManaBar.INSTANCE.isVisible()));
+        attachButton.setMessage(Component.translatable(ManaText.INSTANCE.isAttached()
+                ? "runelessrpg.editor.text.detach" : "runelessrpg.editor.text.attach"));
+    }
+
+    /** Detaches the number from the display (nearest screen anchor) or attaches it (offset to the display). */
+    public void toggleAttached() {
+        ManaText.INSTANCE.setAttached(!ManaText.INSTANCE.isAttached(), width, height);
+        selected = Element.TEXT;
+        refreshButtons();
     }
 
     @Override
@@ -123,10 +145,13 @@ public final class ManaHudEditScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
         ManaBar bar = ManaBar.INSTANCE;
         bar.renderPreview(graphics);
-        ManaBar.Bounds bounds = bar.getEditorBounds(width, height);
-        boolean hovered = bounds.contains(mouseX, mouseY);
-        graphics.renderOutline(bounds.x() - 2, bounds.y() - 2, bounds.width() + 4, bounds.height() + 4,
-                selected ? SELECTED_OUTLINE_COLOR : hovered ? OUTLINE_COLOR : 0x60FFFFFF);
+        Element hovered = elementAt(mouseX, mouseY);
+        ManaBar.Bounds barBounds = bar.getEditorBounds(width, height);
+        frame(graphics, barBounds, Element.BAR, hovered, OUTLINE_COLOR, Component.translatable("runelessrpg.editor.element.bar"));
+        ManaText.Layout text = ManaText.INSTANCE.currentLayout(width, height);
+        if (text != null) {
+            frame(graphics, text.bounds(), Element.TEXT, hovered, TEXT_OUTLINE_COLOR, Component.translatable("runelessrpg.editor.element.text"));
+        }
         if (guideX >= 0) {
             graphics.vLine(guideX, 0, height, GUIDE_COLOR);
         }
@@ -140,26 +165,57 @@ public final class ManaHudEditScreen extends Screen {
                 Component.translatable("runelessrpg.anchor." + bar.getAnchor().name().toLowerCase(Locale.ROOT))), width / 2, anchorY, 0xFFFFFFFF);
     }
 
+    /** Outline of an element plus its name above it (small). */
+    private void frame(GuiGraphics graphics, ManaBar.Bounds bounds, Element element, @Nullable Element hovered, int color, Component name) {
+        int outline = selected == element ? SELECTED_OUTLINE_COLOR : hovered == element ? color : IDLE_OUTLINE_COLOR;
+        graphics.renderOutline(bounds.x() - 2, bounds.y() - 2, bounds.width() + 4, bounds.height() + 4, outline);
+        graphics.pose().pushPose();
+        graphics.pose().translate(bounds.x() - 2, bounds.y() - 2 - font.lineHeight * 0.5F - 1, 0.0F);
+        graphics.pose().scale(0.5F, 0.5F, 1.0F);
+        graphics.drawString(font, name, 0, 0, outline, true);
+        graphics.pose().popPose();
+    }
+
+    /** The element under the mouse; the number wins, it is drawn on top. */
+    @Nullable
+    private Element elementAt(double mouseX, double mouseY) {
+        ManaText.Layout text = ManaText.INSTANCE.currentLayout(width, height);
+        if (text != null && text.bounds().contains(mouseX, mouseY)) {
+            return Element.TEXT;
+        }
+        return ManaBar.INSTANCE.getEditorBounds(width, height).contains(mouseX, mouseY) ? Element.BAR : null;
+    }
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (super.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
-        ManaBar bar = ManaBar.INSTANCE;
-        if (!bar.getEditorBounds(width, height).contains(mouseX, mouseY)) {
-            selected = false;
+        Element element = elementAt(mouseX, mouseY);
+        selected = element;
+        if (element == null) {
             return false;
         }
-        selected = true;
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            ManaBar.Bounds bounds = bar.getBounds(width, height);
-            dragging = true;
-            grabOffsetX = (int) mouseX - bounds.x();
-            grabOffsetY = (int) mouseY - bounds.y();
+            dragging = element;
+            if (element == Element.TEXT) {
+                ManaText.INSTANCE.beginEdit(width, height);
+                ManaText.Layout text = ManaText.INSTANCE.currentLayout(width, height);
+                grabOffsetX = text != null ? mouseX - text.x() : 0;
+                grabOffsetY = text != null ? mouseY - text.y() : 0;
+            } else {
+                ManaBar.Bounds bounds = ManaBar.INSTANCE.getBounds(width, height);
+                grabOffsetX = mouseX - bounds.x();
+                grabOffsetY = mouseY - bounds.y();
+            }
             return true;
         }
         if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
-            bar.setVisible(!bar.isVisible());
+            if (element == Element.TEXT) {
+                ManaText.INSTANCE.setVisible(!ManaText.INSTANCE.isVisible());
+            } else {
+                ManaBar.INSTANCE.setVisible(!ManaBar.INSTANCE.isVisible());
+            }
             refreshButtons();
             return true;
         }
@@ -168,27 +224,36 @@ public final class ManaHudEditScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (!dragging || button != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+        if (dragging == null || button != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        }
+        double x = mouseX - grabOffsetX;
+        double y = mouseY - grabOffsetY;
+        if (dragging == Element.TEXT) {
+            ManaText.INSTANCE.moveTo(x, y, width, height);
+            return true;
         }
         ManaBar bar = ManaBar.INSTANCE;
         ManaBar.Bounds bounds = bar.getBounds(width, height);
-        int x = (int) mouseX - grabOffsetX;
-        int y = (int) mouseY - grabOffsetY;
+        int barX = (int) Math.round(x);
+        int barY = (int) Math.round(y);
         guideX = -1;
         guideY = -1;
         if (!hasShiftDown()) {
-            x = snap(x, bounds.width(), width, true);
-            y = snap(y, bounds.height(), height, false);
+            barX = snap(barX, bounds.width(), width, true);
+            barY = snap(barY, bounds.height(), height, false);
         }
-        bar.moveTo(x, y, width, height);
+        bar.moveTo(barX, barY, width, height);
         return true;
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            dragging = false;
+            if (dragging == Element.TEXT && hasControlDown()) {
+                toggleAttached();
+            }
+            dragging = null;
             guideX = -1;
             guideY = -1;
         }
@@ -197,19 +262,24 @@ public final class ManaHudEditScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        ManaBar bar = ManaBar.INSTANCE;
-        if (scrollY == 0 || !bar.getEditorBounds(width, height).contains(mouseX, mouseY)) {
+        Element element = elementAt(mouseX, mouseY);
+        if (scrollY == 0 || element == null) {
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
-        selected = true;
-        float scale = bar.getScale() + (scrollY > 0 ? SCALE_STEP : -SCALE_STEP);
-        bar.setScale(Math.round(scale * 10.0F) / 10.0F);
+        selected = element;
+        if (element == Element.TEXT) {
+            ManaText.INSTANCE.scaleStep(scrollY > 0 ? 1 : -1, width, height);
+        } else {
+            ManaBar bar = ManaBar.INSTANCE;
+            float scale = bar.getScale() + (scrollY > 0 ? SCALE_STEP : -SCALE_STEP);
+            bar.setScale(Math.round(scale * 10.0F) / 10.0F);
+        }
         return true;
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (selected) {
+        if (selected != null) {
             int step = hasShiftDown() ? 10 : 1;
             int dx = 0;
             int dy = 0;
@@ -222,9 +292,18 @@ public final class ManaHudEditScreen extends Screen {
                     return super.keyPressed(keyCode, scanCode, modifiers);
                 }
             }
-            ManaBar bar = ManaBar.INSTANCE;
-            ManaBar.Bounds bounds = bar.getBounds(width, height);
-            bar.moveTo(bounds.x() + dx, bounds.y() + dy, width, height);
+            if (selected == Element.TEXT) {
+                ManaText text = ManaText.INSTANCE;
+                text.beginEdit(width, height);
+                ManaText.Layout layout = text.currentLayout(width, height);
+                if (layout != null) {
+                    text.moveTo(layout.x() + dx, layout.y() + dy, width, height);
+                }
+            } else {
+                ManaBar bar = ManaBar.INSTANCE;
+                ManaBar.Bounds bounds = bar.getBounds(width, height);
+                bar.moveTo(bounds.x() + dx, bounds.y() + dy, width, height);
+            }
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);

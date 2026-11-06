@@ -3,9 +3,7 @@ package com.drehverschluss.runelessrpg.client.hud;
 import com.drehverschluss.runelessrpg.attribute.RunelessAttributes;
 import com.drehverschluss.runelessrpg.client.ClientManaState;
 import com.drehverschluss.runelessrpg.client.config.RunelessClientConfig;
-import com.drehverschluss.runelessrpg.util.CostFormat;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.FastColor;
@@ -27,7 +25,6 @@ public final class ManaBar {
     /** Dragging a bar this close to a docking position docks it at Miki again. */
     private static final int MIKI_SNAP_DISTANCE = 4;
     private static final long FILL_GLIDE_NANOS = 100_000_000L;
-    private static final int TEXT_ABOVE_GAP = 1;
     private static final int EDGE_MARGIN = 2;
 
     private static final int THIN_WIDTH = 182;
@@ -37,25 +34,8 @@ public final class ManaBar {
     private static final int VERTICAL_WIDTH = 7;
     private static final int VERTICAL_HEIGHT = 62;
 
-    /** Width available for the number in the visible part of the half diamond (x 168 … 185 at the tip rows). */
-    private static final double HALF_DIAMOND_TEXT_WIDTH = 17.0;
-    /** Width available for the number in a whole diamond. */
-    private static final double DIAMOND_TEXT_WIDTH = 26.0;
-    /** Smallest text scale in a diamond before CURRENT_MAX / PERCENT fall back to CURRENT. */
-    private static final double MIN_DIAMOND_TEXT_SCALE = 0.75;
-    private static final double BAND_TEXT_SCALE = 0.75;
-    private static final double BAND_TEXT_GAP = 2.0;
-
     private static final int BORDER = 0xFF000000;
     private static final int EMPTY = 0xFF1B1D26;
-    private static final int MIKI_OUTER = 0xFF140F0E;
-    private static final int MIKI_FRAME_LIGHT = 0xFFC88A6A;
-    private static final int MIKI_FRAME_MID = 0xFF9A5B48;
-    private static final int MIKI_FRAME_DARK = 0xFF5E3127;
-    private static final int MIKI_INNER = 0xFF0E1619;
-    private static final int TEXT_COLOR = 0xFFFFFFFF;
-    private static final int DEBT_TEXT_COLOR = 0xFFFF9A9A;
-    private static final int TEXT_OUTLINE_COLOR = 0x000000;
 
     /** Bar position and size on screen (scale applied). */
     public record Bounds(int x, int y, int width, int height) {
@@ -72,13 +52,10 @@ public final class ManaBar {
     }
 
     /** Exact position of the display: top left corner, scale and unscaled size. */
-    private record Placement(double x, double y, double scale, int width, int height) {}
+    record Placement(double x, double y, double scale, int width, int height) {}
 
-    /** What a GUI layer draws: everything, only the shape (behind Miki) or only the number (in front of Miki). */
+    /** What a GUI layer draws: everything, only the shape or only the number. */
     public enum Pass { ALL, SHAPE, TEXT }
-
-    /** Text to draw: string, center or left / right reference point (local pixels) and scale. */
-    private record TextLayout(String text, double x, double y, double scale, int align) {}
 
     private HudAnchor anchor = DEFAULT_ANCHOR;
     private int offsetX;
@@ -111,7 +88,7 @@ public final class ManaBar {
     public ManaBarStyle effectiveStyle() {
         ManaBarStyle style = RunelessClientConfig.STYLE.get();
         if (style == ManaBarStyle.AUTO) {
-            return MikiCompat.isLoaded() ? ManaBarStyle.MIKI : ManaBarStyle.THIN;
+            return MikiCompat.isLoaded() ? ManaBarStyle.MIKI_DIAMOND : ManaBarStyle.THIN;
         }
         if (style == ManaBarStyle.MIKI_BAND && !atMikiDiamond()) {
             return ManaBarStyle.MIKI;
@@ -120,11 +97,11 @@ public final class ManaBar {
     }
 
     /** True when the display is docked beside Miki's health / hunger diamond right now. */
-    private boolean atMikiDiamond() {
+    boolean atMikiDiamond() {
         return anchor.isMikiSide() && MikiCompat.isActive();
     }
 
-    private boolean isShape(ManaBarStyle style) {
+    boolean isShape(ManaBarStyle style) {
         return style == ManaBarStyle.MIKI_DIAMOND || style == ManaBarStyle.MIKI_BAND;
     }
 
@@ -138,12 +115,12 @@ public final class ManaBar {
         return behindMikiDiamond() || RunelessClientConfig.DRAW_BEHIND_MIKI_HUD.get();
     }
 
-    /** Drawn behind Miki's HUD at a Miki anchor: the number goes to the front layer so Miki's vines cannot cover it. */
-    public boolean textInFront() {
+    /** True if the HUD draws the shape under Miki's HUD right now (the editor must not draw it on top again). */
+    public boolean shapeUnderMikiHud() {
         return drawsBehind() && anchor.isMiki() && MikiCompat.isActive();
     }
 
-    private ManaShapes.Shape shapeFor(ManaBarStyle style) {
+    ManaShapes.Shape shapeFor(ManaBarStyle style) {
         boolean right = !anchor.isMiki() || anchor.isMikiRight();
         if (style == ManaBarStyle.MIKI_BAND) {
             return ManaShapes.band(RunelessClientConfig.BAND_WIDTH.get(), RunelessClientConfig.BAND_GAP.get(), right);
@@ -217,7 +194,7 @@ public final class ManaBar {
         return new double[]{x, y};
     }
 
-    private Placement placement(int screenWidth, int screenHeight) {
+    Placement placement(int screenWidth, int screenHeight) {
         ManaBarStyle style = effectiveStyle();
         if (isShape(style) && atMikiDiamond()) {
             return mikiShapePlacement(style, screenWidth, screenHeight);
@@ -282,33 +259,15 @@ public final class ManaBar {
     }
 
     /**
-     * Area used by the editor to pick and frame the display: the bar plus the text above it, the visible part of the
-     * half diamond, the band plus its number.
+     * Area used by the editor to pick and frame the display: the bar or shape, the visible part of the half diamond.
+     * The number is a separate element ({@link ManaText}).
      */
     public Bounds getEditorBounds(int screenWidth, int screenHeight) {
-        ManaBarStyle style = effectiveStyle();
         Placement p = placement(screenWidth, screenHeight);
-        Bounds bounds = toBounds(p);
-        if (style == ManaBarStyle.MIKI_DIAMOND && atMikiDiamond()) {
+        if (effectiveStyle() == ManaBarStyle.MIKI_DIAMOND && atMikiDiamond()) {
             return visibleHalfDiamond(p, screenWidth, screenHeight);
         }
-        if (style == ManaBarStyle.MIKI_BAND) {
-            TextLayout text = textLayout(style, 20.0, 20.0);
-            if (text != null) {
-                Font font = Minecraft.getInstance().font;
-                double textWidth = (font.width(text.text()) + 2) * text.scale() * p.scale();
-                double textX = p.x() + text.x() * p.scale() - (text.align() < 0 ? textWidth : 0);
-                double textHeight = (font.lineHeight + 1) * text.scale() * p.scale();
-                double textY = p.y() + text.y() * p.scale() - textHeight / 2.0;
-                bounds = bounds.union(new Bounds(Mth.floor(textX), Mth.floor(textY), Mth.ceil(textWidth), Mth.ceil(textHeight)));
-            }
-            return bounds;
-        }
-        if (textAbove(style) && RunelessClientConfig.TEXT_MODE.get() != TextMode.NONE) {
-            int extra = Mth.ceil((Minecraft.getInstance().font.lineHeight + TEXT_ABOVE_GAP) * p.scale());
-            return new Bounds(bounds.x(), bounds.y() - extra, bounds.width(), bounds.height() + extra);
-        }
-        return bounds;
+        return toBounds(p);
     }
 
     /** True if the point lies on the visible display (bar rectangle, shape pixels, uncovered part of the half diamond). */
@@ -405,11 +364,11 @@ public final class ManaBar {
 
     // ------------------------------------------------------------------ drawing
 
-    /** @return true if the bar should be drawn for the local player right now */
-    public boolean shouldRender() {
+    /** @return true if the mana display (bar or number) can be drawn for the local player right now */
+    public boolean canRender() {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (!visible || player == null || mc.options.hideGui || mc.gameMode == null) {
+        if (player == null || mc.options.hideGui || mc.gameMode == null) {
             return false;
         }
         if (player.isSpectator() && RunelessClientConfig.HIDE_IN_SPECTATOR.get()) {
@@ -421,22 +380,37 @@ public final class ManaBar {
         return maxMana(player) > 0.0;
     }
 
-    public void render(GuiGraphics graphics, Pass pass) {
-        LocalPlayer player = Minecraft.getInstance().player;
-        draw(graphics, ClientManaState.getMana(), maxMana(player), false, pass);
+    /** @return true if the bar or the number should be drawn right now */
+    public boolean shouldRender() {
+        return canRender() && (visible || ManaText.INSTANCE.isVisible());
     }
 
-    /** Editor preview: the real values if available, otherwise a sample. */
+    public void render(GuiGraphics graphics, Pass pass) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        double mana = ClientManaState.getMana();
+        double max = maxMana(player);
+        if (pass != Pass.TEXT && visible) {
+            draw(graphics, mana, max, false);
+        }
+        if (pass != Pass.SHAPE) {
+            ManaText.INSTANCE.render(graphics, mana, max, false);
+        }
+    }
+
+    /** Editor preview: the real values if available, otherwise a sample. Hidden elements are drawn dimmed. */
     public void renderPreview(GuiGraphics graphics) {
         LocalPlayer player = Minecraft.getInstance().player;
         double max = player != null ? maxMana(player) : 0.0;
-        // A visible shape behind Miki's diamond is already drawn by the HUD below the editor; only its number on top
-        Pass pass = visible && textInFront() && shouldRender() ? Pass.TEXT : Pass.ALL;
+        double mana = ClientManaState.getMana();
         if (max <= 0.0) {
-            draw(graphics, 14.0, 20.0, !visible, pass);
-        } else {
-            draw(graphics, ClientManaState.getMana(), max, !visible, pass);
+            mana = 14.0;
+            max = 20.0;
         }
+        // A visible shape under Miki's HUD is already drawn by the HUD below the editor
+        if (!(visible && shapeUnderMikiHud() && canRender())) {
+            draw(graphics, mana, max, !visible);
+        }
+        ManaText.INSTANCE.render(graphics, mana, max, true);
     }
 
     public static double maxMana(LocalPlayer player) {
@@ -460,7 +434,7 @@ public final class ManaBar {
         return lastShown;
     }
 
-    private void draw(GuiGraphics graphics, double mana, double max, boolean dimmed, Pass pass) {
+    private void draw(GuiGraphics graphics, double mana, double max, boolean dimmed) {
         int screenWidth = graphics.guiWidth();
         int screenHeight = graphics.guiHeight();
         ManaBarStyle style = effectiveStyle();
@@ -476,34 +450,30 @@ public final class ManaBar {
         int debtColor = RunelessClientConfig.color(RunelessClientConfig.DEBT_COLOR, 0xFFB02020);
         float flash = ManaFlash.intensity();
         int flashColor = RunelessClientConfig.color(RunelessClientConfig.FLASH_COLOR, 0xFFFF3030);
-        ManaShapes.Shape shape = isShape(style) ? shapeFor(style) : null;
+        ManaShapes.Shape shape = isShape(style) ? shapeFor(style)
+                : style == ManaBarStyle.MIKI ? ManaShapes.bar(width, height) : null;
+        boolean animated = RunelessClientConfig.ANIMATED_FILL.get();
 
         graphics.pose().pushPose();
         graphics.pose().translate((float) p.x(), (float) p.y(), 0.0F);
         graphics.pose().scale(s, s, 1.0F);
-        if (pass != Pass.TEXT) {
-            if (shape != null) {
-                ManaShapes.draw(graphics, shape, fill, debt, fillColor, debtColor);
-                if (flash > 0.0F) {
-                    ManaShapes.overlay(graphics, shape, withAlpha(flashColor, 0.75F * flash));
-                }
+        if (shape != null) {
+            ManaShapes.draw(graphics, shape, fill, debt, fillColor, debtColor, animated);
+        } else if (style == ManaBarStyle.VERTICAL) {
+            drawVertical(graphics, width, height, fill, debt, fillColor, debtColor);
+        } else {
+            drawThin(graphics, width, height, fill, debt, fillColor, debtColor);
+        }
+        if (flash > 0.0F) {
+            if (isShape(style)) {
+                ManaShapes.overlay(graphics, shape, withAlpha(flashColor, 0.75F * flash));
             } else {
-                switch (style) {
-                    case MIKI -> drawMiki(graphics, width, height, fill, debt, fillColor, debtColor);
-                    case VERTICAL -> drawVertical(graphics, width, height, fill, debt, fillColor, debtColor);
-                    default -> drawThin(graphics, width, height, fill, debt, fillColor, debtColor);
-                }
-                if (flash > 0.0F) {
-                    graphics.fill(0, 0, width, height, withAlpha(flashColor, 0.7F * flash));
-                    graphics.renderOutline(-1, -1, width + 2, height + 2, withAlpha(flashColor, flash));
-                }
+                graphics.fill(0, 0, width, height, withAlpha(flashColor, 0.7F * flash));
+                graphics.renderOutline(-1, -1, width + 2, height + 2, withAlpha(flashColor, flash));
             }
         }
-        if (pass != Pass.SHAPE) {
-            drawText(graphics, style, width, height, mana, max, s);
-        }
-        if (dimmed && pass != Pass.TEXT) {
-            if (shape != null) {
+        if (dimmed) {
+            if (isShape(style)) {
                 ManaShapes.overlay(graphics, shape, 0x90000000);
             } else {
                 graphics.fill(-1, -1, width + 1, height + 1, 0x90000000);
@@ -527,27 +497,6 @@ public final class ManaBar {
         }
     }
 
-    private static void drawMiki(GuiGraphics g, int w, int h, double fill, double debt, int fillColor, int debtColor) {
-        g.fill(0, 0, w, h, MIKI_OUTER);
-        g.fill(1, 1, w - 1, h - 1, MIKI_FRAME_MID);
-        g.fill(1, 1, w - 1, 2, MIKI_FRAME_LIGHT);
-        g.fill(1, h - 2, w - 1, h - 1, MIKI_FRAME_DARK);
-        g.fill(2, 2, w - 2, h - 2, MIKI_INNER);
-        int inner = w - 4;
-        int filled = (int) Math.round(inner * fill);
-        if (filled > 0) {
-            g.fillGradient(2, 2, 2 + filled, h - 2, lighter(fillColor, 0.25F), darker(fillColor, 0.35F));
-            g.fill(2, 2, 2 + filled, 3, lighter(fillColor, 0.55F));
-        }
-        int debtLength = (int) Math.round(inner * debt);
-        if (debtLength > 0) {
-            g.fillGradient(2, 2, 2 + debtLength, h - 2, lighter(debtColor, 0.2F), darker(debtColor, 0.35F));
-        }
-        // Small rivets at both ends, like the studs on Miki's frames
-        g.fill(0, h / 2 - 1, 1, h / 2 + 1, MIKI_FRAME_LIGHT);
-        g.fill(w - 1, h / 2 - 1, w, h / 2 + 1, MIKI_FRAME_LIGHT);
-    }
-
     private static void drawVertical(GuiGraphics g, int w, int h, double fill, double debt, int fillColor, int debtColor) {
         g.fill(0, 0, w, h, BORDER);
         g.fill(1, 1, w - 1, h - 1, EMPTY);
@@ -560,104 +509,6 @@ public final class ManaBar {
         int debtLength = (int) Math.round(inner * debt);
         if (debtLength > 0) {
             g.fill(1, h - 1 - debtLength, w - 1, h - 1, debtColor);
-        }
-    }
-
-    private static boolean textAbove(ManaBarStyle style) {
-        return style == ManaBarStyle.THIN || style == ManaBarStyle.VERTICAL;
-    }
-
-    private static String textFor(TextMode mode, double mana, double max) {
-        return switch (mode) {
-            case CURRENT -> String.valueOf(Mth.floor(mana));
-            case CURRENT_MAX -> Mth.floor(mana) + " / " + CostFormat.format(max);
-            case PERCENT -> Math.round(mana / max * 100.0) + "%";
-            default -> "";
-        };
-    }
-
-    /**
-     * Where the number goes for the diamond and band styles, or null for none. In a diamond the text is shrunk to
-     * the free width; CURRENT_MAX / PERCENT fall back to CURRENT if that needs a scale below 0.75.
-     */
-    private TextLayout textLayout(ManaBarStyle style, double mana, double max) {
-        TextMode mode = RunelessClientConfig.TEXT_MODE.get();
-        if (mode == TextMode.NONE || max <= 0) {
-            return null;
-        }
-        Font font = Minecraft.getInstance().font;
-        ManaShapes.Shape shape = shapeFor(style);
-        if (style == ManaBarStyle.MIKI_BAND) {
-            boolean right = anchor.isMikiRight();
-            double x = shape.textX + (right ? BAND_TEXT_GAP : -BAND_TEXT_GAP);
-            return new TextLayout(textFor(mode, mana, max), x, shape.textY, BAND_TEXT_SCALE, right ? 1 : -1);
-        }
-        boolean half = atMikiDiamond();
-        double available = half ? HALF_DIAMOND_TEXT_WIDTH : DIAMOND_TEXT_WIDTH;
-        double textScale = fitScale(font, mode, mana, max, available);
-        if (textScale < MIN_DIAMOND_TEXT_SCALE && mode != TextMode.CURRENT) {
-            mode = TextMode.CURRENT;
-            textScale = fitScale(font, mode, mana, max, available);
-        }
-        double x = half ? shape.textX : shape.width() / 2.0;
-        return new TextLayout(textFor(mode, mana, max), x, shape.height() / 2.0, textScale, 0);
-    }
-
-    /** Scale that fits the widest text of the mode (current or full value, plus the outline) into the width. */
-    private static double fitScale(Font font, TextMode mode, double mana, double max, double available) {
-        int widest = Math.max(font.width(textFor(mode, mana, max)), font.width(textFor(mode, max, max))) + 2;
-        return Math.min(1.0, available / widest);
-    }
-
-    private void drawText(GuiGraphics g, ManaBarStyle style, int w, int h, double mana, double max, float barScale) {
-        float alpha = ManaTextFade.alpha();
-        if (alpha < 0.02F) {
-            return;
-        }
-        Font font = Minecraft.getInstance().font;
-        int color = mana < 0 ? DEBT_TEXT_COLOR : TEXT_COLOR;
-        if (isShape(style)) {
-            TextLayout layout = textLayout(style, mana, max);
-            if (layout == null) {
-                return;
-            }
-            // Whole screen pixels per font pixel keep the shrunk number sharp, unless that would shrink it a lot more
-            double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
-            double pixels = guiScale * barScale * layout.scale();
-            double snapped = Math.floor(pixels);
-            double textScale = snapped >= 1.0 && snapped >= pixels * 0.75 ? snapped / (guiScale * barScale) : layout.scale();
-            int textWidth = font.width(layout.text());
-            g.pose().pushPose();
-            g.pose().translate((float) layout.x(), (float) layout.y(), 0.0F);
-            g.pose().scale((float) textScale, (float) textScale, 1.0F);
-            int x = layout.align() == 0 ? -textWidth / 2 : layout.align() > 0 ? 1 : -textWidth - 1;
-            drawNumber(g, font, layout.text(), x, -font.lineHeight / 2, color, alpha);
-            g.pose().popPose();
-            return;
-        }
-        TextMode mode = RunelessClientConfig.TEXT_MODE.get();
-        if (mode == TextMode.NONE || max <= 0) {
-            return;
-        }
-        String text = textFor(mode, mana, max);
-        int textWidth = font.width(text);
-        int x = (w - textWidth) / 2;
-        int y = textAbove(style) ? -font.lineHeight - TEXT_ABOVE_GAP + 1 : (h - font.lineHeight) / 2 + 1;
-        drawNumber(g, font, text, x, y, color, alpha);
-    }
-
-    /** The number with a dark 1 px outline (like Miki's numbers) or, if disabled, with the usual drop shadow. */
-    private static void drawNumber(GuiGraphics g, Font font, String text, int x, int y, int color, float alpha) {
-        int textColor = withAlpha(color, alpha);
-        if (RunelessClientConfig.TEXT_OUTLINE.get()) {
-            int outline = withAlpha(TEXT_OUTLINE_COLOR, alpha);
-            g.drawString(font, text, x - 1, y, outline, false);
-            g.drawString(font, text, x + 1, y, outline, false);
-            g.drawString(font, text, x, y - 1, outline, false);
-            g.drawString(font, text, x, y + 1, outline, false);
-            g.drawString(font, text, x, y, textColor, false);
-        } else {
-            g.drawString(font, text, x, y, textColor, true);
         }
     }
 

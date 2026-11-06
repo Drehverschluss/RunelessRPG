@@ -32,6 +32,7 @@ public class RunelessRPGClient {
             InputConstants.UNKNOWN.getValue(), "key.categories.runelessrpg");
 
     public RunelessRPGClient(IEventBus modEventBus, ModContainer container) {
+        RunelessClientConfig.migrateLegacyFile();
         container.registerConfig(ModConfig.Type.CLIENT, RunelessClientConfig.SPEC);
         container.registerExtensionPoint(IConfigScreenFactory.class, RunelessConfigMenuScreen::new);
 
