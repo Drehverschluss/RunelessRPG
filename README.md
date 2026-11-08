@@ -212,7 +212,7 @@ MIT, see [LICENSE](LICENSE). Credits and licenses of everything RunelessRPG uses
 [CREDITS.md](CREDITS.md).
 
 - The mana item texture and the effect icons are from [RPGMana](https://github.com/cleannrooster/rpgmana) by
-  cleannrooster (CC0-1.0), which was also the idea source for several enchantments and potions (own implementation,
+  cleannrooster (MIT License, see [CREDITS.md](CREDITS.md)), which was also the idea source for several enchantments and potions (own implementation,
   no code used).
 - The attribute icons are from the "RPG Icon Pack – 400+ Skills and Spells" by Clockwork Raven Studios.
 - The idea of the generated cost report is inspired by Savaru's Mana.

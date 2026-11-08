@@ -10,7 +10,7 @@ displayName="${mod_name}"
 displayURL="https://github.com/Drehverschluss/RunelessRPG"
 authors="${mod_authors}"
 logoFile="runelessrpg.png"
-credits="Mana item texture and effect icons from RPGMana by cleannrooster (CC0-1.0). Attribute icons by Clockwork Raven Studios (RPG Icon Pack - 400+ Skills and Spells). Spell cost report idea inspired by Savaru's Mana."
+credits="Mana item texture and effect icons from RPGMana by cleannrooster (MIT License). Attribute icons by Clockwork Raven Studios (RPG Icon Pack - 400+ Skills and Spells). Spell cost report idea inspired by Savaru's Mana."
 description='''${mod_description}'''
 
 [[dependencies.${mod_id}]]
