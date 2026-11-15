@@ -40,6 +40,8 @@ public final class RunelessServerConfig {
     public static final ModConfigSpec.DoubleValue MANA_LEECH_EXTRA_TARGET_PERCENT;
     public static final ModConfigSpec.DoubleValue SPELL_MANA_LEECH_EXTRA_TARGET_PERCENT;
     public static final ModConfigSpec.BooleanValue LEECH_CAP_AT_TARGET_HEALTH;
+    public static final ModConfigSpec.BooleanValue MANA_LEECH_ENCHANTMENT_ENABLED;
+    public static final ModConfigSpec.BooleanValue SPELL_MANA_LEECH_ENCHANTMENT_ENABLED;
 
     public static final ModConfigSpec.EnumValue<SpellInfinityMode> SPELL_INFINITY_MODE;
     public static final ModConfigSpec.DoubleValue SPELL_INFINITY_COST_REDUCTION;
@@ -172,6 +174,14 @@ public final class RunelessServerConfig {
         LEECH_CAP_AT_TARGET_HEALTH = builder
                 .comment("Count at most the health + absorption the target had before the hit (no mana from overkill damage)")
                 .define("leechCapAtTargetHealth", true);
+        MANA_LEECH_ENCHANTMENT_ENABLED = builder
+                .comment("Enchantment runelessrpg:mana_leech (melee and ranged weapons, loot only).",
+                        "false = no effect, also on items that already have it, and it is removed from newly generated loot.",
+                        "The enchantment stays on existing items and works again when turned back on. Applies immediately")
+                .define("manaLeechEnchantmentEnabled", true);
+        SPELL_MANA_LEECH_ENCHANTMENT_ENABLED = builder
+                .comment("Enchantment runelessrpg:spell_mana_leech (spell weapons, loot only). Same rules as manaLeechEnchantmentEnabled")
+                .define("spellManaLeechEnchantmentEnabled", true);
         builder.pop();
 
         builder.comment("Enchantment spell_engine:spell_infinity").push("spell_infinity");

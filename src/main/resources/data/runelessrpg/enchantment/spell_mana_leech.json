@@ -1,0 +1,20 @@
+{
+  "anvil_cost": 4,
+  "description": { "translate": "enchantment.runelessrpg.spell_mana_leech" },
+  "effects": {
+    "minecraft:attributes": [
+      {
+        "amount": { "type": "minecraft:linear", "base": 0.01, "per_level_above_first": 0.01 },
+        "attribute": "runelessrpg:spell_mana_leech",
+        "id": "runelessrpg:enchantment.spell_mana_leech",
+        "operation": "add_value"
+      }
+    ]
+  },
+  "max_cost": { "base": 35, "per_level_above_first": 10 },
+  "max_level": 3,
+  "min_cost": { "base": 5, "per_level_above_first": 10 },
+  "slots": [ "mainhand" ],
+  "supported_items": "#runelessrpg:enchantable/magic_weapon",
+  "weight": 2
+}

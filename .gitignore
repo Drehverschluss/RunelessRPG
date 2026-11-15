@@ -44,3 +44,6 @@ Konzept/
 CurseforgeSachen/
 *-Prompt.txt
 libs/
+CLAUDE.md
+.claude/
+run-server/

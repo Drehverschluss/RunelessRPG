@@ -38,12 +38,14 @@ public record CostSettings(
         int magicalStabilityDurationSeconds,
         int longMagicalStabilityDurationSeconds,
         int borrowedPowerDurationSeconds,
-        double borrowedPowerDebtPercent) {
+        double borrowedPowerDebtPercent,
+        boolean manaLeechEnchantmentEnabled,
+        boolean spellManaLeechEnchantmentEnabled) {
 
     public static final CostSettings DEFAULTS = new CostSettings(ManaMode.FULL_COST, 50.0, true, 50.0,
             List.of(4.0, 5.0, 7.0, 10.0, 14.0, 18.0), true, 1.0, true, 0.75, true, 0.5, false, 1.0, ChannelCostMode.DRAIN, 0.0,
             0.5, true, SpellInfinityMode.REDUCE_COST, 20.0, 20.0,
-            25.0, 0.15, 180, 480, 30, 50.0);
+            25.0, 0.15, 180, 480, 30, 50.0, true, true);
 
     public static final StreamCodec<FriendlyByteBuf, CostSettings> STREAM_CODEC = StreamCodec.of(CostSettings::write, CostSettings::read);
 
@@ -100,7 +102,9 @@ public record CostSettings(
                 RunelessServerConfig.MAGICAL_STABILITY_DURATION.get(),
                 RunelessServerConfig.LONG_MAGICAL_STABILITY_DURATION.get(),
                 RunelessServerConfig.BORROWED_POWER_DURATION.get(),
-                RunelessServerConfig.BORROWED_POWER_DEBT_PERCENT.get());
+                RunelessServerConfig.BORROWED_POWER_DEBT_PERCENT.get(),
+                RunelessServerConfig.MANA_LEECH_ENCHANTMENT_ENABLED.get(),
+                RunelessServerConfig.SPELL_MANA_LEECH_ENCHANTMENT_ENABLED.get());
     }
 
     /** Tier table lookup: higher tiers use the last value, negative tiers the first. */
@@ -142,6 +146,8 @@ public record CostSettings(
         buf.writeVarInt(s.longMagicalStabilityDurationSeconds);
         buf.writeVarInt(s.borrowedPowerDurationSeconds);
         buf.writeDouble(s.borrowedPowerDebtPercent);
+        buf.writeBoolean(s.manaLeechEnchantmentEnabled);
+        buf.writeBoolean(s.spellManaLeechEnchantmentEnabled);
     }
 
     private static CostSettings read(FriendlyByteBuf buf) {
@@ -159,6 +165,7 @@ public record CostSettings(
                 buf.readBoolean(), buf.readDouble(), buf.readBoolean(), buf.readDouble(),
                 buf.readEnum(ChannelCostMode.class), buf.readDouble(),
                 buf.readDouble(), buf.readBoolean(), buf.readEnum(SpellInfinityMode.class), buf.readDouble(), buf.readDouble(),
-                buf.readDouble(), buf.readDouble(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readDouble());
+                buf.readDouble(), buf.readDouble(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readDouble(),
+                buf.readBoolean(), buf.readBoolean());
     }
 }

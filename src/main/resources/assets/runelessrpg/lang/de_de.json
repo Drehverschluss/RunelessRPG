@@ -135,6 +135,8 @@
   "runelessrpg.configuration.manaLeechExtraTargetPercent": "Manaraub: Anteil weitere Ziele (%)",
   "runelessrpg.configuration.spellManaLeechExtraTargetPercent": "Zauber-Manaraub: Anteil weitere Ziele (%)",
   "runelessrpg.configuration.leechCapAtTargetHealth": "Raub auf Zielleben begrenzen",
+  "runelessrpg.configuration.manaLeechEnchantmentEnabled": "Manaraub-Verzauberung aktiv",
+  "runelessrpg.configuration.spellManaLeechEnchantmentEnabled": "Zauber-Manaraub-Verzauberung aktiv",
   "runelessrpg.configuration.spell_infinity": "Zauber-Unendlichkeit",
   "runelessrpg.configuration.mode": "Modus",
   "runelessrpg.configuration.costReductionPercent": "Kostenreduktion (%)",
@@ -184,5 +186,9 @@
   "enchantment.runelessrpg.azure": "Azurn",
   "enchantment.runelessrpg.azure.desc": "Senkt die Mana-Kosten von Zaubern.",
   "enchantment.runelessrpg.inspired": "Inspiriert",
-  "enchantment.runelessrpg.inspired.desc": "Erhöht die Überladung: Zauber kosten mehr Mana und richten mehr Schaden an."
+  "enchantment.runelessrpg.inspired.desc": "Erhöht die Überladung: Zauber kosten mehr Mana und richten mehr Schaden an.",
+  "enchantment.runelessrpg.mana_leech": "Manadurstig",
+  "enchantment.runelessrpg.mana_leech.desc": "Ein Teil des Waffenschadens gibt Mana zurück. Nur als Beute zu finden.",
+  "enchantment.runelessrpg.spell_mana_leech": "Widerhallend",
+  "enchantment.runelessrpg.spell_mana_leech.desc": "Ein Teil des Schadens direkter Zaubertreffer gibt Mana zurück. Nur als Beute zu finden."
 }

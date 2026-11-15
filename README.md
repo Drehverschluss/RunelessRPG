@@ -49,7 +49,7 @@ anything is sent to the server.
 
 1. Install NeoForge `21.1` for Minecraft `1.21.1`.
 2. Install Spell Engine (it brings Spell Power, Cloth Config and playerAnimator).
-3. Put `runelessrpg-0.1.0.jar` into the `mods` folder of the **server and of every client**.
+3. Put `runelessrpg-0.2.0.jar` into the `mods` folder of the **server and of every client**.
 4. Optional: install any of the mods below; RunelessRPG picks them up automatically.
 
 | Mod | Tested version | Needed |

@@ -1,6 +1,7 @@
 package com.drehverschluss.runelessrpg.cost;
 
 import com.drehverschluss.runelessrpg.config.RunelessServerConfig;
+import com.drehverschluss.runelessrpg.enchantment.LeechEnchantments;
 import com.drehverschluss.runelessrpg.network.CostSettingsPayload;
 import com.drehverschluss.runelessrpg.network.SpellCostOverridesPayload;
 import net.minecraft.server.MinecraftServer;
@@ -78,7 +79,10 @@ public final class CostEvents {
         }
         MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         if (server != null) {
-            server.execute(() -> PacketDistributor.sendToAllPlayers(new CostSettingsPayload(CostSettings.server())));
+            server.execute(() -> {
+                PacketDistributor.sendToAllPlayers(new CostSettingsPayload(CostSettings.server()));
+                LeechEnchantments.refreshEquipment(server);
+            });
         }
     }
 }

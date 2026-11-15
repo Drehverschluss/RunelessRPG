@@ -7,6 +7,8 @@ import com.drehverschluss.runelessrpg.compat.apotheosis.ApotheosisCompat;
 import com.drehverschluss.runelessrpg.config.RunelessCommonConfig;
 import com.drehverschluss.runelessrpg.config.RunelessServerConfig;
 import com.drehverschluss.runelessrpg.cost.CostEvents;
+import com.drehverschluss.runelessrpg.enchantment.DisabledEnchantmentsLootModifier;
+import com.drehverschluss.runelessrpg.enchantment.LeechEnchantments;
 import com.drehverschluss.runelessrpg.impact.ManaLeech;
 import com.drehverschluss.runelessrpg.impact.Overcharge;
 import com.drehverschluss.runelessrpg.item.RunelessItems;
@@ -45,6 +47,8 @@ public class RunelessRPG {
         ManaEvents.register(modEventBus);
         CostEvents.register(modEventBus);
         ManaLeech.register();
+        LeechEnchantments.register();
+        DisabledEnchantmentsLootModifier.register(modEventBus);
         Overcharge.register();
         ApotheosisIntegration.register(modEventBus);
         if (ModList.get().isLoaded("apotheosis")) {

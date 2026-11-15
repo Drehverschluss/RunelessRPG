@@ -1,0 +1,13 @@
+{
+  "values": [
+    { "id": "#minecraft:swords", "required": false },
+    { "id": "#minecraft:axes", "required": false },
+    { "id": "#minecraft:enchantable/mace", "required": false },
+    { "id": "#minecraft:enchantable/bow", "required": false },
+    { "id": "#minecraft:enchantable/crossbow", "required": false },
+    { "id": "#minecraft:enchantable/trident", "required": false }
+  ],
+  "remove": [
+    { "id": "#runelessrpg:enchantable/magic_weapon", "required": false }
+  ]
+}

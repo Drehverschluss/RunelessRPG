@@ -1,0 +1,6 @@
+{
+  "replace": false,
+  "entries": [
+    "runelessrpg:remove_disabled_enchantments"
+  ]
+}
