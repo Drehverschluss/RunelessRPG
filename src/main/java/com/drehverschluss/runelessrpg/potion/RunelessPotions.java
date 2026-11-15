@@ -36,6 +36,9 @@ public final class RunelessPotions {
     /** Instant: restores a percentage of max mana. */
     public static final DeferredHolder<MobEffect, MobEffect> MANA_RESTORE = EFFECTS.register("mana_restore",
             () -> new ManaRestoreEffect(0x2E6BFF));
+    /** Potion cooldown: mana restoration gives less while it is active, see {@link ManaSickness}. */
+    public static final DeferredHolder<MobEffect, MobEffect> MANA_SICKNESS = EFFECTS.register("mana_sickness",
+            () -> new ManaSickness.Effect(0x7C8C3A));
     /** Lowers {@code runelessrpg:mana_cost} (value per level from the server config). */
     public static final DeferredHolder<MobEffect, MobEffect> MAGICAL_STABILITY = EFFECTS.register("magical_stability",
             () -> new MobEffect(MobEffectCategory.BENEFICIAL, 0x46D7E6) {}.addAttributeModifier(RunelessAttributes.MANA_COST,
@@ -66,6 +69,7 @@ public final class RunelessPotions {
         POTIONS.register(modBus);
         NeoForge.EVENT_BUS.addListener(RunelessPotions::onRegisterBrewing);
         BorrowedPower.register();
+        ManaSickness.register();
     }
 
     private static ResourceLocation id(String path) {

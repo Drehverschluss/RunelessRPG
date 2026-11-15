@@ -35,8 +35,9 @@ public final class ManaCosts {
     private ManaCosts() {}
 
     /**
-     * Resolves category and base cost. Order: non-active → NONE, free tag, datapack value, category tags
-     * (item abilities, weapon skills, class skills, spells), rune cost item, otherwise NONE.
+     * Resolves category and base cost. Order: non-active → NONE, free tag, fixed datapack value, category tags
+     * (item abilities, weapon skills, class skills, spells), rune cost item, otherwise NONE. A factor from a data file
+     * scales the tier cost of an enabled category.
      */
     public static SpellCostInfo resolve(Level level, Holder<Spell> holder) {
         Spell spell = holder.value();
@@ -44,10 +45,10 @@ public final class ManaCosts {
         boolean channeled = SpellParameters.isChanneled(spell);
         int tier = spell.tier;
         if (spell.type != Spell.Type.ACTIVE || spell.active == null) {
-            return new SpellCostInfo(ManaCategory.NONE, Source.NONE, 0.0, rune, channeled, tier);
+            return SpellCostInfo.noCost(ManaCategory.NONE, Source.NONE, rune, channeled, tier);
         }
         if (holder.is(CostTags.FREE)) {
-            return new SpellCostInfo(ManaCategory.FREE, Source.FREE, 0.0, rune, channeled, tier);
+            return SpellCostInfo.noCost(ManaCategory.FREE, Source.FREE, rune, channeled, tier);
         }
 
         boolean clientSide = level.isClientSide();
@@ -56,15 +57,22 @@ public final class ManaCosts {
         ManaCategory category = tagged != ManaCategory.NONE ? tagged : (rune ? ManaCategory.SPELL : ManaCategory.NONE);
 
         Optional<ResourceLocation> id = holder.unwrapKey().map(ResourceKey::location);
-        Optional<Double> override = id.flatMap(spellId -> SpellCostOverrides.get(clientSide, spellId));
-        if (override.isPresent()) {
-            return new SpellCostInfo(category == ManaCategory.NONE ? ManaCategory.SPELL : category, Source.DATAPACK, override.get(), rune, channeled, tier);
+        Optional<SpellCostOverrides.Value> override = id.flatMap(spellId -> SpellCostOverrides.get(clientSide, spellId));
+        Source dataSource = override.map(value -> value.builtin() ? Source.BUILTIN : Source.DATAPACK).orElse(null);
+        if (override.isPresent() && !override.get().factor()) {
+            // Fixed value: always applies, also for a turned-off category
+            return new SpellCostInfo(category == ManaCategory.NONE ? ManaCategory.SPELL : category, dataSource, override.get().amount(),
+                    rune, channeled, tier, true, 0.0, 1.0, 0.0);
         }
         if (category == ManaCategory.NONE || !isEnabled(settings, category)) {
-            return new SpellCostInfo(ManaCategory.NONE, Source.NONE, 0.0, rune, channeled, tier);
+            return SpellCostInfo.noCost(ManaCategory.NONE, Source.NONE, rune, channeled, tier);
         }
-        double base = settings.tierCost(tier) * multiplier(settings, category);
-        return new SpellCostInfo(category, tagged != ManaCategory.NONE ? Source.TAG : Source.RUNE, base, rune, channeled, tier);
+        // Factor from a data file: replaces nothing but scales the tier cost, so it follows tierCosts and the category
+        double factor = override.map(SpellCostOverrides.Value::amount).orElse(1.0);
+        double tierCost = settings.tierCost(tier);
+        double multiplier = multiplier(settings, category);
+        Source source = dataSource != null ? dataSource : (tagged != ManaCategory.NONE ? Source.TAG : Source.RUNE);
+        return new SpellCostInfo(category, source, tierCost * factor * multiplier, rune, channeled, tier, false, tierCost, factor, multiplier);
     }
 
     private static ManaCategory taggedCategory(Holder<Spell> holder) {

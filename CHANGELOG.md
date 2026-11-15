@@ -2,8 +2,15 @@
 
 ## 0.2.0
 
+> **Existing configs change automatically:** the new option `backlashMode` in `[potions]` is added to existing
+> `runelessrpg-server.toml` files with its default `PERCENT_MAX_HEALTH`. The Borrowed Power backlash then scales with
+> max health instead of the old fixed values. Set `backlashMode = "FLAT"` to keep the old behavior; your values in
+> `backlashDamagePer10Percent` and `backlashMaxDamage` stay in the file and apply again.
+
+### Leech enchantments
+
 - Two new loot-only enchantments, so packs without Apotheosis have a source of mana leech:
-  - Mana-Thirsty (`runelessrpg:mana_leech`), melee and ranged weapons: +2 / 3.5 / 5 % Mana Leech.
+  - Mana-Thirsty (`runelessrpg:mana_leech`), melee and ranged weapons: +1.5 / 2.5 / 3.5 % Mana Leech.
   - Resonant (`runelessrpg:spell_mana_leech`), spell weapons: +1 / 2 / 3 % Spell Mana Leech.
   - Maximum level III. They only come from loot (enchanted weapons and books in chests, fishing), never from the
     enchanting table, villagers or mob equipment. They stack with the Apotheosis affixes.
@@ -12,7 +19,48 @@
 - New server config options `manaLeechEnchantmentEnabled` and `spellManaLeechEnchantmentEnabled` in `[mana_leech]`.
   When turned off, the enchantment has no effect, also on items that already have it, and it is removed from newly
   generated loot. Changes apply immediately.
-- Network protocol 7: clients and servers need the same RunelessRPG version.
+
+### Mana Leech limit
+
+- New server config option `manaLeechMaxPerSecond` in `[mana_leech]` (default 2.5, 0 = no limit): weapon mana leech
+  gives at most this much mana per second, from all sources of the attribute together (affixes, enchantment, gear).
+  Up to one second of it can be stored for a single big hit. Spell Mana Leech has no limit.
+
+### Spell costs for the RPG Series
+
+- Built-in cost factors for the fast staff spells and the channeled spells of the RPG Series, so the four wizard
+  schools run out of mana at a similar rate. The factor multiplies the tier cost:
+
+  | Spell | Tier | Factor | Cost (default tier costs) |
+  |---|---|---|---|
+  | Frostbolt, Lightning Bolt (Stormcaller) | 1 | × 0.7 | 3.5 instead of 5 |
+  | Arcane Missile | 2 | × 1.5 | 10.5 instead of 7 |
+  | Fire Breath | 2 | × 2 | 14 instead of 7 |
+  | Arcane Beam, Fire Storm | 3 | × 2 | 20 instead of 10 |
+  | Frost Blizzard | 4 | × 2 | 28 instead of 14 |
+
+  They live in `data/runelessrpg/runelessrpg/spell_costs/rpg_series.json`. Spells that are not installed are skipped.
+- Spell cost files have a new key `"factors"` next to `"costs"`: a factor on the tier cost. Unlike a fixed cost, it
+  follows `tierCosts`, the category multiplier and turning the category off.
+- Files with the same path now replace each other (the highest pack wins), like recipes or loot tables. A datapack with
+  `data/runelessrpg/runelessrpg/spell_costs/rpg_series.json` and `{"costs": {}}` turns the built-in values off.
+- New cost source `BUILTIN`. `/runelessrpg cost` and the cost report show the calculation, e.g.
+  `tier 1: 5 × 0.7 = 3.5 (BUILTIN)`.
+
+### Potions
+
+- New effect Mana Sickness (`runelessrpg:mana_sickness`): every Potion of Mana gives it for 20 seconds (drunk, splash,
+  lingering cloud, tipped arrow). During Mana Sickness a Potion of Mana restores only 25 % of its normal amount and
+  renews the effect. Milk and totems do not remove it, death does. New options `manaSicknessSeconds` (0 = off) and
+  `manaSicknessRestorePercent` in `[potions]`.
+- Borrowed Power backlash in percent of max health: new option `backlashMode` (`PERCENT_MAX_HEALTH` or `FLAT`) and
+  the options `backlashHealthPercentPer10Percent` (default 10) and `backlashMaxHealthPercent` (default 50). With 20
+  health this is the same as before (10 damage at 50 % debt); with more health the backlash grows with it.
+
+### Other
+
+- German texts: "Mana-Entzug" everywhere (config used "Manaraub").
+- Network protocol 8: clients and servers need the same RunelessRPG version.
 
 ## 0.1.0 – first release
 

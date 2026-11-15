@@ -70,7 +70,8 @@ anything is sent to the server.
 
 Every player has `runelessrpg:max_mana` (20) and `runelessrpg:mana_regen` (0.5 per second). Spells cost the value of
 their tier in a cost table (4, 5, 7, 10, 14, 18), times 1.0 for spells, 0.75 for class skills and 0.5 for weapon
-skills, times the player's Mana Cost (never below 50 %). Spells that cannot be paid are not cast; Spell Engine shows
+skills, times the player's Mana Cost (never below 50 %). Built-in factors balance the RPG Series wizard schools
+(Frostbolt and Lightning Bolt × 0.7, the channeled Arcane, Fire and Frost spells × 1.5 or × 2). Spells that cannot be paid are not cast; Spell Engine shows
 "missing Mana" and the bar flashes. Debt modes and the Potion of Borrowed Power allow casting below 0. Runes are never
 consumed, arrows are. More: [Wiki → Spell costs](https://github.com/Drehverschluss/RunelessRPG/wiki/Spell-Costs),
 [Wiki → Mana and attributes](https://github.com/Drehverschluss/RunelessRPG/wiki/Mana-and-Attributes).
@@ -85,7 +86,8 @@ the start or at the end. More: [Wiki → Spell costs](https://github.com/Drehver
 
 Overcharge makes spells cost more and deal more damage and healing (+20 % cost = +10 % damage by default); summons and
 spell clouds keep the bonus they were paid with. Mana Leech turns weapon damage into mana, Spell Mana Leech the damage
-of direct spell hits; further targets in the same tick give less, overkill and summons give nothing. More:
+of direct spell hits; further targets in the same tick give less, overkill and summons give nothing. Weapon leech gives
+at most 2.5 mana per second (configurable). More:
 [Wiki → Overcharge and leech](https://github.com/Drehverschluss/RunelessRPG/wiki/Overcharge-and-Leech).
 
 ### Mana HUD
@@ -97,9 +99,10 @@ automatic fitting, a red flash when mana is missing and a hover tooltip. More:
 
 ### Enchantments and potions
 
-Seven enchantments for armor and spell weapons (Max Mana, regeneration, Mana Cost, Overcharge), Potions of Mana I/II,
-Magical Stability (−15 % Mana Cost) and Borrowed Power (cast into debt, backlash damage when it ends in debt), with
-configurable brewing ingredients. Spell Engine's Spell Infinity lowers mana costs. More:
+Seven enchantments for armor and spell weapons (Max Mana, regeneration, Mana Cost, Overcharge) and two loot-only leech
+enchantments, Mana-Thirsty for weapons and Resonant for spell weapons. Potions of Mana I/II (with a short Mana Sickness
+that makes the next potion weaker), Magical Stability (−15 % Mana Cost) and Borrowed Power (cast into debt, backlash
+damage in percent of max health when it ends in debt), with configurable brewing ingredients. Spell Engine's Spell Infinity lowers mana costs. More:
 [Wiki → Enchantments](https://github.com/Drehverschluss/RunelessRPG/wiki/Enchantments),
 [Wiki → Potions](https://github.com/Drehverschluss/RunelessRPG/wiki/Potions).
 
@@ -130,8 +133,9 @@ The server config is sent to the clients and applies while the game runs. All op
 | Path | Content |
 |---|---|
 | `data/<ns>/tags/spell/` → `runelessrpg:cost/spells`, `class_skills`, `weapon_skills`, `item_abilities`, `free` | Which spell belongs to which cost category |
-| `data/<ns>/runelessrpg/spell_costs/*.json` | Fixed base cost per spell (`{"costs": {"wizards:fireball": 6}}`) |
-| `data/runelessrpg/tags/item/enchantable/armor.json`, `magic_weapon.json` | Items for the enchantments and the spell weapon affixes |
+| `data/<ns>/runelessrpg/spell_costs/*.json` | Fixed cost (`"costs"`) or factor on the tier cost (`"factors"`) per spell |
+| `data/runelessrpg/runelessrpg/spell_costs/rpg_series.json` | Built-in factors for the RPG Series; a datapack file with the same path replaces it |
+| `data/runelessrpg/tags/item/enchantable/armor.json`, `magic_weapon.json`, `weapon.json` | Items for the enchantments and the spell weapon affixes |
 | `data/runelessrpg/tags/damage_type/mana_leech/weapon_damage.json` | Damage types that count for Mana Leech |
 | `data/runelessrpg/tags/entity_type/no_mana_leech.json` | Entities that never give mana |
 | `data/runelessrpg/enchantment/*.json`, `data/runelessrpg/affixes/**` | Enchantments and Apotheosis affixes |
@@ -197,11 +201,13 @@ Requires Java 21.
 2. `/runelessrpg mana @s set 2` and cast Fireball: it is not cast, "Mana" is shown as missing and the bar flashes.
 3. Channel Arcane Beam and release it early: only the channeled part is paid. Switch items while channeling: the
    cooldown is still set.
-4. `/runelessrpg cost wizards:fireball` and `/runelessrpg report` (file in `config/runelessrpg/`).
+4. `/runelessrpg cost wizards:fireball`, `/runelessrpg cost wizards:frostbolt` (`tier 1: 5 × 0.7 = 3.5 (BUILTIN)`) and
+   `/runelessrpg report` (file in `config/runelessrpg/`).
 5. Put on gear with `runelessrpg:max_mana`, set mana above the base, relog and die: the mana is kept on relog and full
    after respawn.
 6. Bind *Edit HUD Layout*, move and scale the bar and the number, restart: the layout is kept.
-7. Brew a Potion of Mana (Awkward Potion + Lapis Lazuli) and drink it.
+7. Brew a Potion of Mana (Awkward Potion + Lapis Lazuli) and drink it twice: the second one restores a quarter while
+   Mana Sickness is active.
 8. With Apotheosis, Apothic Attributes and Placebo in `libs/test/`: affixed armor and staffs can roll the RunelessRPG
    affixes; staffs never get Mana Leech, swords never get the spell weapon affixes.
 9. `runServer` and connect with `runClient` (multiplayer, `localhost`).

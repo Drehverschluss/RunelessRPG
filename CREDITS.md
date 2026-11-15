@@ -13,6 +13,7 @@ the files are used under the MIT License. The license text is also bundled in th
 - `assets/runelessrpg/textures/mob_effect/borrowed_power.png` and `magical_stability.png`: the effect icons of the same
   name, placed on an 18×18 canvas.
 - `assets/runelessrpg/textures/mob_effect/mana_restore.png`: RPGMana's `magical_stability` icon, recolored.
+- `assets/runelessrpg/textures/mob_effect/mana_sickness.png`: the same icon, recolored again (pale green).
 - Idea source for several enchantments (Manafused, Lucid, Mana-Stabilized, Cerulean, Resplendent, Azure, Inspired)
   and the Borrowed Power and Magical Stability potions. RunelessRPG has its own implementation; no code of RPGMana is
   used.

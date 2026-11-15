@@ -38,6 +38,7 @@ public final class RunelessServerConfig {
     public static final ModConfigSpec.BooleanValue OVERCHARGE_AFFECTS_SUMMONS;
 
     public static final ModConfigSpec.DoubleValue MANA_LEECH_EXTRA_TARGET_PERCENT;
+    public static final ModConfigSpec.DoubleValue MANA_LEECH_MAX_PER_SECOND;
     public static final ModConfigSpec.DoubleValue SPELL_MANA_LEECH_EXTRA_TARGET_PERCENT;
     public static final ModConfigSpec.BooleanValue LEECH_CAP_AT_TARGET_HEALTH;
     public static final ModConfigSpec.BooleanValue MANA_LEECH_ENCHANTMENT_ENABLED;
@@ -48,11 +49,16 @@ public final class RunelessServerConfig {
     public static final ModConfigSpec.DoubleValue SPELL_INFINITY_FLOOR_REDUCTION;
 
     public static final ModConfigSpec.DoubleValue MANA_POTION_PERCENT_PER_LEVEL;
+    public static final ModConfigSpec.IntValue MANA_SICKNESS_SECONDS;
+    public static final ModConfigSpec.DoubleValue MANA_SICKNESS_RESTORE_PERCENT;
     public static final ModConfigSpec.DoubleValue MAGICAL_STABILITY_MANA_COST;
     public static final ModConfigSpec.IntValue MAGICAL_STABILITY_DURATION;
     public static final ModConfigSpec.IntValue LONG_MAGICAL_STABILITY_DURATION;
     public static final ModConfigSpec.IntValue BORROWED_POWER_DURATION;
     public static final ModConfigSpec.DoubleValue BORROWED_POWER_DEBT_PERCENT;
+    public static final ModConfigSpec.EnumValue<BacklashMode> BACKLASH_MODE;
+    public static final ModConfigSpec.DoubleValue BACKLASH_HEALTH_PERCENT_PER_10_PERCENT;
+    public static final ModConfigSpec.DoubleValue BACKLASH_MAX_HEALTH_PERCENT;
     public static final ModConfigSpec.DoubleValue BACKLASH_DAMAGE_PER_10_PERCENT;
     public static final ModConfigSpec.DoubleValue BACKLASH_MAX_DAMAGE;
 
@@ -62,6 +68,14 @@ public final class RunelessServerConfig {
         REDUCE_COST,
         /** No effect on mana costs. */
         NONE
+    }
+
+    /** How the Borrowed Power backlash damage is calculated. */
+    public enum BacklashMode {
+        /** Percent of the player's max health per 10% debt, with a maximum in percent of max health. */
+        PERCENT_MAX_HEALTH,
+        /** Fixed damage per 10% debt, with a fixed maximum. */
+        FLAT
     }
 
     /** What happens when a player has less mana than a spell costs. */
@@ -168,6 +182,11 @@ public final class RunelessServerConfig {
         MANA_LEECH_EXTRA_TARGET_PERCENT = builder
                 .comment("Weapon mana leech: every further target hit in the same game tick gives only this percentage (0 = first target only)")
                 .defineInRange("manaLeechExtraTargetPercent", 25.0, 0.0, 100.0);
+        MANA_LEECH_MAX_PER_SECOND = builder
+                .comment("Weapon mana leech: at most this much mana per second from all sources of runelessrpg:mana_leech together",
+                        "(affixes, enchantment, gear). Up to one second of it can be stored for a single big hit. 0 = no limit.",
+                        "Counted in game ticks (20 per second). Spell mana leech has no such limit")
+                .defineInRange("manaLeechMaxPerSecond", 2.5, 0.0, 100000.0);
         SPELL_MANA_LEECH_EXTRA_TARGET_PERCENT = builder
                 .comment("Spell mana leech: every further target hit in the same game tick gives only this percentage (0 = first target only)")
                 .defineInRange("spellManaLeechExtraTargetPercent", 25.0, 0.0, 100.0);
@@ -204,6 +223,13 @@ public final class RunelessServerConfig {
                 .comment("Mana restoration: (level) x this percentage of max mana (Potion of Mana I = 25%, II = 50%)",
                         "Pays debt back first, never above max mana. Splash potions restore less at the edge of the splash, like Instant Health")
                 .defineInRange("manaPotionPercentPerLevel", 25.0, 0.0, 1000.0);
+        MANA_SICKNESS_SECONDS = builder
+                .comment("Every mana restoration (drunk, splash, lingering cloud, tipped arrow) gives the effect runelessrpg:mana_sickness",
+                        "for this many seconds, or renews it. Milk and totems do not remove it, death does. 0 = no Mana Sickness")
+                .defineInRange("manaSicknessSeconds", 20, 0, 86400);
+        MANA_SICKNESS_RESTORE_PERCENT = builder
+                .comment("During Mana Sickness a mana restoration gives only this percentage of its normal amount (0 = nothing)")
+                .defineInRange("manaSicknessRestorePercent", 25.0, 0.0, 100.0);
         MAGICAL_STABILITY_MANA_COST = builder
                 .comment("Magical Stability: runelessrpg:mana_cost -this value per level (0.15 = -15%). The floor minManaCostPercent still applies")
                 .defineInRange("magicalStabilityManaCost", 0.15, 0.0, 10.0);
@@ -220,12 +246,23 @@ public final class RunelessServerConfig {
                 .comment("Borrowed Power: spells may take mana down to -(this percentage of max mana), also in manaMode FULL_COST.",
                         "If the mana mode itself allows more (DEBT, or a larger DEBT_LIMIT), the more generous rule applies")
                 .defineInRange("borrowedPowerDebtPercent", 50.0, 0.0, 1000.0);
-        BACKLASH_DAMAGE_PER_10_PERCENT = builder
-                .comment("When Borrowed Power ends (runs out, milk, /effect clear) with mana below 0: damage per 10% of max mana in debt",
+        BACKLASH_MODE = builder
+                .comment("Backlash when Borrowed Power ends (runs out, milk, /effect clear) with mana below 0.",
+                        "PERCENT_MAX_HEALTH = damage in percent of the player's max health (backlashHealthPercentPer10Percent, backlashMaxHealthPercent)",
+                        "FLAT               = fixed damage (backlashDamagePer10Percent, backlashMaxDamage)",
                         "Damage type runelessrpg:mana_backlash ignores armor and enchantments. The debt stays, regeneration pays it back")
+                .defineEnum("backlashMode", BacklashMode.PERCENT_MAX_HEALTH);
+        BACKLASH_HEALTH_PERCENT_PER_10_PERCENT = builder
+                .comment("PERCENT_MAX_HEALTH: damage in percent of max health per 10% of max mana in debt")
+                .defineInRange("backlashHealthPercentPer10Percent", 10.0, 0.0, 1000.0);
+        BACKLASH_MAX_HEALTH_PERCENT = builder
+                .comment("PERCENT_MAX_HEALTH: maximum backlash damage in percent of max health")
+                .defineInRange("backlashMaxHealthPercent", 50.0, 0.0, 10000.0);
+        BACKLASH_DAMAGE_PER_10_PERCENT = builder
+                .comment("FLAT: damage per 10% of max mana in debt")
                 .defineInRange("backlashDamagePer10Percent", 2.0, 0.0, 1000.0);
         BACKLASH_MAX_DAMAGE = builder
-                .comment("Maximum backlash damage")
+                .comment("FLAT: maximum backlash damage")
                 .defineInRange("backlashMaxDamage", 10.0, 0.0, 100000.0);
         builder.pop();
 

@@ -13,7 +13,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Instant mana restoration ({@code runelessrpg:mana_restore}): (level) × {@code manaPotionPercentPerLevel} % of max
  * mana, players only. Splash potions and lingering clouds pass Vanilla's strength factor (less at the edge of the
- * splash), exactly like Instant Health.
+ * splash), exactly like Instant Health. Every restoration gives Mana Sickness; during it only
+ * {@code manaSicknessRestorePercent} % ({@link ManaSickness}).
  */
 public class ManaRestoreEffect extends InstantenousMobEffect {
     public ManaRestoreEffect(int color) {
@@ -37,7 +38,10 @@ public class ManaRestoreEffect extends InstantenousMobEffect {
             return;
         }
         double percent = (amplifier + 1) * RunelessServerConfig.MANA_POTION_PERCENT_PER_LEVEL.get();
-        double amount = ManaManager.getMaxMana(player) * percent / 100.0 * strength;
-        ManaManager.restoreMana(player, amount, ManaChangeEvent.Reason.POTION);
+        double amount = ManaManager.getMaxMana(player) * percent / 100.0 * strength * ManaSickness.restoreFactor(player);
+        ManaSickness.trigger(player);
+        if (amount > 0.0) {
+            ManaManager.restoreMana(player, amount, ManaChangeEvent.Reason.POTION);
+        }
     }
 }

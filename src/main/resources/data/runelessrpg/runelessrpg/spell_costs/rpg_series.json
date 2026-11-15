@@ -1,0 +1,11 @@
+{
+  "factors": {
+    "wizards:frostbolt": 0.7,
+    "stormcaller:lightning_bolt": 0.7,
+    "wizards:arcane_missile": 1.5,
+    "wizards:fire_breath": 2,
+    "wizards:arcane_beam": 2,
+    "wizards:fire_storm": 2,
+    "wizards:frost_blizzard": 2
+  }
+}

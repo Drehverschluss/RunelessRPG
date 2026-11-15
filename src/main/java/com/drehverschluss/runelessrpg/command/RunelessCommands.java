@@ -102,7 +102,9 @@ public final class RunelessCommands {
             source.sendSuccess(() -> Component.translatable("commands.runelessrpg.cost.none"), false);
             return 1;
         }
-        source.sendSuccess(() -> Component.translatable("commands.runelessrpg.cost.base", CostFormat.format(info.baseCost())), false);
+        source.sendSuccess(() -> info.fixed()
+                ? Component.translatable("commands.runelessrpg.cost.base", info.calculation(), info.source().name())
+                : Component.translatable("commands.runelessrpg.cost.base_tier", spell.tier, info.calculation(), info.source().name()), false);
         if (player == null) {
             return 1;
         }

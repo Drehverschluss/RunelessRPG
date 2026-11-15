@@ -49,6 +49,10 @@ public final class ManaLeech {
 
     private static final Map<UUID, Counter> WEAPON_HITS = new HashMap<>();
     private static final Map<UUID, Counter> SPELL_HITS = new HashMap<>();
+    /** Weapon leech budget per player for manaLeechMaxPerSecond (in memory only, removed on logout). */
+    private record Budget(long gameTime, double mana) {}
+
+    private static final Map<UUID, Budget> WEAPON_BUDGET = new HashMap<>();
     /** Health + absorption of targets right before the damage is applied (Pre → Post of the same hit). */
     private static final Map<LivingEntity, Float> HEALTH_BEFORE = new IdentityHashMap<>();
 
@@ -60,6 +64,7 @@ public final class ManaLeech {
         NeoForge.EVENT_BUS.addListener(PlayerEvent.PlayerLoggedOutEvent.class, event -> {
             WEAPON_HITS.remove(event.getEntity().getUUID());
             SPELL_HITS.remove(event.getEntity().getUUID());
+            WEAPON_BUDGET.remove(event.getEntity().getUUID());
         });
         // Damage that is reduced to 0 never reaches Post; never keep entities longer than a tick
         NeoForge.EVENT_BUS.addListener(ServerTickEvent.Post.class, event -> HEALTH_BEFORE.clear());
@@ -91,11 +96,13 @@ public final class ManaLeech {
         }
         SpellHitContext.Hit hit = SpellHitContext.currentHit();
         if (isWeaponHit(source, hit, player)) {
-            leech(player, damage, player.getAttributeValue(RunelessAttributes.MANA_LEECH),
-                    WEAPON_HITS, RunelessServerConfig.MANA_LEECH_EXTRA_TARGET_PERCENT.get(), ManaChangeEvent.Reason.LEECH);
+            double amount = leechAmount(player, damage, player.getAttributeValue(RunelessAttributes.MANA_LEECH),
+                    WEAPON_HITS, RunelessServerConfig.MANA_LEECH_EXTRA_TARGET_PERCENT.get());
+            restore(player, limitPerSecond(player, amount), ManaChangeEvent.Reason.LEECH);
         } else if (isDirectSpellHit(source, hit, player)) {
-            leech(player, damage, player.getAttributeValue(RunelessAttributes.SPELL_MANA_LEECH),
-                    SPELL_HITS, RunelessServerConfig.SPELL_MANA_LEECH_EXTRA_TARGET_PERCENT.get(), ManaChangeEvent.Reason.SPELL_LEECH);
+            double amount = leechAmount(player, damage, player.getAttributeValue(RunelessAttributes.SPELL_MANA_LEECH),
+                    SPELL_HITS, RunelessServerConfig.SPELL_MANA_LEECH_EXTRA_TARGET_PERCENT.get());
+            restore(player, amount, ManaChangeEvent.Reason.SPELL_LEECH);
         }
     }
 
@@ -124,17 +131,42 @@ public final class ManaLeech {
                 && hit.spell().value().type == Spell.Type.ACTIVE && source.is(SPELL_DAMAGE);
     }
 
-    private static void leech(ServerPlayer player, float damage, double percent, Map<UUID, Counter> counters, double extraTargetPercent,
-                              ManaChangeEvent.Reason reason) {
+    /** Damage × leech × share of this target (first target of the tick 100 %, every further one the extra target share). */
+    private static double leechAmount(ServerPlayer player, float damage, double percent, Map<UUID, Counter> counters, double extraTargetPercent) {
         if (percent <= 0.0) {
-            return;
+            return 0.0;
         }
         long gameTime = player.level().getGameTime();
         Counter counter = counters.get(player.getUUID());
         int previousHits = counter != null && counter.gameTime() == gameTime ? counter.hits() : 0;
         counters.put(player.getUUID(), new Counter(gameTime, previousHits + 1));
         double share = previousHits == 0 ? 1.0 : extraTargetPercent / 100.0;
-        double amount = damage * percent * share;
+        return damage * percent * share;
+    }
+
+    /**
+     * {@code manaLeechMaxPerSecond}: a budget per player that refills by limit ÷ 20 per game tick and holds at most one
+     * second (limit). Each weapon leech takes what the budget still has. 0 = no limit.
+     */
+    static double limitPerSecond(ServerPlayer player, double amount) {
+        double limit = RunelessServerConfig.MANA_LEECH_MAX_PER_SECOND.get();
+        if (limit <= 0.0 || amount <= 0.0) {
+            return amount;
+        }
+        long gameTime = player.level().getGameTime();
+        Budget budget = WEAPON_BUDGET.get(player.getUUID());
+        double available;
+        if (budget == null || gameTime < budget.gameTime()) {
+            available = limit;
+        } else {
+            available = Math.min(limit, budget.mana() + (gameTime - budget.gameTime()) * limit / 20.0);
+        }
+        double granted = Math.min(amount, available);
+        WEAPON_BUDGET.put(player.getUUID(), new Budget(gameTime, available - granted));
+        return granted;
+    }
+
+    private static void restore(ServerPlayer player, double amount, ManaChangeEvent.Reason reason) {
         if (amount > 0.0) {
             ManaManager.restoreMana(player, amount, reason);
         }

@@ -4,7 +4,7 @@
   "effects": {
     "minecraft:attributes": [
       {
-        "amount": { "type": "minecraft:linear", "base": 0.02, "per_level_above_first": 0.015 },
+        "amount": { "type": "minecraft:linear", "base": 0.015, "per_level_above_first": 0.01 },
         "attribute": "runelessrpg:mana_leech",
         "id": "runelessrpg:enchantment.mana_leech",
         "operation": "add_value"

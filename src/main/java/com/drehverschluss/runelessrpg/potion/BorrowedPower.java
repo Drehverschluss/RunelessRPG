@@ -81,15 +81,26 @@ public final class BorrowedPower {
         PENDING_BACKLASH.clear();
     }
 
-    /** Debt in % of max mana ÷ 10 × {@code backlashDamagePer10Percent}, at most {@code backlashMaxDamage}; 0 without debt. */
+    /**
+     * Debt in % of max mana ÷ 10 × the damage per 10 %, capped; 0 without debt.
+     * <ul>
+     *   <li>{@code PERCENT_MAX_HEALTH}: {@code backlashHealthPercentPer10Percent} % of max health, at most
+     *       {@code backlashMaxHealthPercent} % (max health when the backlash hits)</li>
+     *   <li>{@code FLAT}: {@code backlashDamagePer10Percent}, at most {@code backlashMaxDamage}</li>
+     * </ul>
+     */
     public static double backlashDamage(ServerPlayer player) {
         double mana = ManaManager.getMana(player);
         double max = ManaManager.getMaxMana(player);
         if (mana >= 0.0 || max <= 0.0) {
             return 0.0;
         }
-        double debtPercent = -mana / max * 100.0;
-        double damage = debtPercent / 10.0 * RunelessServerConfig.BACKLASH_DAMAGE_PER_10_PERCENT.get();
-        return Math.min(damage, RunelessServerConfig.BACKLASH_MAX_DAMAGE.get());
+        double steps = -mana / max * 100.0 / 10.0;
+        if (RunelessServerConfig.BACKLASH_MODE.get() == RunelessServerConfig.BacklashMode.FLAT) {
+            return Math.min(steps * RunelessServerConfig.BACKLASH_DAMAGE_PER_10_PERCENT.get(), RunelessServerConfig.BACKLASH_MAX_DAMAGE.get());
+        }
+        double percent = Math.min(steps * RunelessServerConfig.BACKLASH_HEALTH_PERCENT_PER_10_PERCENT.get(),
+                RunelessServerConfig.BACKLASH_MAX_HEALTH_PERCENT.get());
+        return player.getMaxHealth() * percent / 100.0;
     }
 }
