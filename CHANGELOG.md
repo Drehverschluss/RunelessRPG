@@ -60,6 +60,7 @@
 ### Other
 
 - German texts: "Mana-Entzug" everywhere (config used "Manaraub").
+- Shorter names in the config screen sections Mana Leech and Potions, so they are no longer cut off (English and German).
 - Network protocol 8: clients and servers need the same RunelessRPG version.
 
 ## 0.1.0 – first release

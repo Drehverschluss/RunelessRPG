@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="src/main/resources/runelessrpg.png" alt="RunelessRPG" width="160">
+  <img src="docs/images/banner.png" alt="RunelessRPG">
 </p>
 
 <h1 align="center">RunelessRPG</h1>
