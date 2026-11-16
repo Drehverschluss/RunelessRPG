@@ -17,7 +17,8 @@ import java.util.UUID;
 
 /**
  * Mana Sickness ({@code runelessrpg:mana_sickness}): every mana restoration gives it for {@code manaSicknessSeconds}
- * (or renews it); while it is active a mana restoration gives only {@code manaSicknessRestorePercent} %.
+ * (or renews it); while it is active a mana restoration gives only {@code manaSicknessRestorePercent} %. Lingering
+ * clouds are the exception: they neither give it nor are weakened by it ({@link ManaRestoreEffect}).
  * <p>
  * The effect is added at the end of the server tick: a tipped arrow applies Mana Restoration while the player's effects
  * are being iterated, adding an effect right there would fail. Until then the player counts as sick already, so two

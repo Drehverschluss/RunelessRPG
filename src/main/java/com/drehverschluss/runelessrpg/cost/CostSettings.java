@@ -1,6 +1,7 @@
 package com.drehverschluss.runelessrpg.cost;
 
 import com.drehverschluss.runelessrpg.config.RunelessServerConfig;
+import com.drehverschluss.runelessrpg.config.RunelessServerConfig.BacklashMode;
 import com.drehverschluss.runelessrpg.config.RunelessServerConfig.ChannelCostMode;
 import com.drehverschluss.runelessrpg.config.RunelessServerConfig.ManaMode;
 import com.drehverschluss.runelessrpg.config.RunelessServerConfig.SpellInfinityMode;
@@ -40,12 +41,21 @@ public record CostSettings(
         int borrowedPowerDurationSeconds,
         double borrowedPowerDebtPercent,
         boolean manaLeechEnchantmentEnabled,
-        boolean spellManaLeechEnchantmentEnabled) {
+        boolean spellManaLeechEnchantmentEnabled,
+        int manaSicknessSeconds,
+        double manaSicknessRestorePercent,
+        BacklashMode backlashMode,
+        double backlashHealthPercentPer10Percent,
+        double backlashMaxHealthPercent,
+        double backlashDamagePer10Percent,
+        double backlashMaxDamage,
+        double lingeringManaPercentPerLevel) {
 
     public static final CostSettings DEFAULTS = new CostSettings(ManaMode.FULL_COST, 50.0, true, 50.0,
             List.of(4.0, 5.0, 7.0, 10.0, 14.0, 18.0), true, 1.0, true, 0.75, true, 0.5, false, 1.0, ChannelCostMode.DRAIN, 0.0,
             0.5, true, SpellInfinityMode.REDUCE_COST, 20.0, 20.0,
-            25.0, 0.15, 180, 480, 30, 50.0, true, true);
+            25.0, 0.15, 180, 480, 30, 50.0, true, true,
+            20, 25.0, BacklashMode.PERCENT_MAX_HEALTH, 10.0, 50.0, 2.0, 10.0, 5.0);
 
     public static final StreamCodec<FriendlyByteBuf, CostSettings> STREAM_CODEC = StreamCodec.of(CostSettings::write, CostSettings::read);
 
@@ -104,7 +114,15 @@ public record CostSettings(
                 RunelessServerConfig.BORROWED_POWER_DURATION.get(),
                 RunelessServerConfig.BORROWED_POWER_DEBT_PERCENT.get(),
                 RunelessServerConfig.MANA_LEECH_ENCHANTMENT_ENABLED.get(),
-                RunelessServerConfig.SPELL_MANA_LEECH_ENCHANTMENT_ENABLED.get());
+                RunelessServerConfig.SPELL_MANA_LEECH_ENCHANTMENT_ENABLED.get(),
+                RunelessServerConfig.MANA_SICKNESS_SECONDS.get(),
+                RunelessServerConfig.MANA_SICKNESS_RESTORE_PERCENT.get(),
+                RunelessServerConfig.BACKLASH_MODE.get(),
+                RunelessServerConfig.BACKLASH_HEALTH_PERCENT_PER_10_PERCENT.get(),
+                RunelessServerConfig.BACKLASH_MAX_HEALTH_PERCENT.get(),
+                RunelessServerConfig.BACKLASH_DAMAGE_PER_10_PERCENT.get(),
+                RunelessServerConfig.BACKLASH_MAX_DAMAGE.get(),
+                RunelessServerConfig.LINGERING_MANA_PERCENT_PER_LEVEL.get());
     }
 
     /** Tier table lookup: higher tiers use the last value, negative tiers the first. */
@@ -148,6 +166,14 @@ public record CostSettings(
         buf.writeDouble(s.borrowedPowerDebtPercent);
         buf.writeBoolean(s.manaLeechEnchantmentEnabled);
         buf.writeBoolean(s.spellManaLeechEnchantmentEnabled);
+        buf.writeVarInt(s.manaSicknessSeconds);
+        buf.writeDouble(s.manaSicknessRestorePercent);
+        buf.writeEnum(s.backlashMode);
+        buf.writeDouble(s.backlashHealthPercentPer10Percent);
+        buf.writeDouble(s.backlashMaxHealthPercent);
+        buf.writeDouble(s.backlashDamagePer10Percent);
+        buf.writeDouble(s.backlashMaxDamage);
+        buf.writeDouble(s.lingeringManaPercentPerLevel);
     }
 
     private static CostSettings read(FriendlyByteBuf buf) {
@@ -166,6 +192,8 @@ public record CostSettings(
                 buf.readEnum(ChannelCostMode.class), buf.readDouble(),
                 buf.readDouble(), buf.readBoolean(), buf.readEnum(SpellInfinityMode.class), buf.readDouble(), buf.readDouble(),
                 buf.readDouble(), buf.readDouble(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readDouble(),
-                buf.readBoolean(), buf.readBoolean());
+                buf.readBoolean(), buf.readBoolean(),
+                buf.readVarInt(), buf.readDouble(), buf.readEnum(BacklashMode.class),
+                buf.readDouble(), buf.readDouble(), buf.readDouble(), buf.readDouble(), buf.readDouble());
     }
 }

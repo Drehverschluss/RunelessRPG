@@ -49,6 +49,7 @@ public final class RunelessServerConfig {
     public static final ModConfigSpec.DoubleValue SPELL_INFINITY_FLOOR_REDUCTION;
 
     public static final ModConfigSpec.DoubleValue MANA_POTION_PERCENT_PER_LEVEL;
+    public static final ModConfigSpec.DoubleValue LINGERING_MANA_PERCENT_PER_LEVEL;
     public static final ModConfigSpec.IntValue MANA_SICKNESS_SECONDS;
     public static final ModConfigSpec.DoubleValue MANA_SICKNESS_RESTORE_PERCENT;
     public static final ModConfigSpec.DoubleValue MAGICAL_STABILITY_MANA_COST;
@@ -223,8 +224,13 @@ public final class RunelessServerConfig {
                 .comment("Mana restoration: (level) x this percentage of max mana (Potion of Mana I = 25%, II = 50%)",
                         "Pays debt back first, never above max mana. Splash potions restore less at the edge of the splash, like Instant Health")
                 .defineInRange("manaPotionPercentPerLevel", 25.0, 0.0, 1000.0);
+        LINGERING_MANA_PERCENT_PER_LEVEL = builder
+                .comment("Lingering Potion of Mana: each application of the cloud (once per second per player) restores (level) x this",
+                        "percentage of max mana (I = 5%, II = 10%). Pays debt back first. Lingering clouds neither cause Mana Sickness",
+                        "nor are they weakened by it. The cloud shrinks with every application, so one player gets about five")
+                .defineInRange("lingeringManaPercentPerLevel", 5.0, 0.0, 1000.0);
         MANA_SICKNESS_SECONDS = builder
-                .comment("Every mana restoration (drunk, splash, lingering cloud, tipped arrow) gives the effect runelessrpg:mana_sickness",
+                .comment("Every mana restoration (drunk, splash, tipped arrow; not lingering clouds) gives the effect runelessrpg:mana_sickness",
                         "for this many seconds, or renews it. Milk and totems do not remove it, death does. 0 = no Mana Sickness")
                 .defineInRange("manaSicknessSeconds", 20, 0, 86400);
         MANA_SICKNESS_RESTORE_PERCENT = builder

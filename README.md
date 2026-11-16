@@ -101,8 +101,9 @@ automatic fitting, a red flash when mana is missing and a hover tooltip. More:
 
 Seven enchantments for armor and spell weapons (Max Mana, regeneration, Mana Cost, Overcharge) and two loot-only leech
 enchantments, Mana-Thirsty for weapons and Resonant for spell weapons. Potions of Mana I/II (with a short Mana Sickness
-that makes the next potion weaker), Magical Stability (−15 % Mana Cost) and Borrowed Power (cast into debt, backlash
-damage in percent of max health when it ends in debt), with configurable brewing ingredients. Spell Engine's Spell Infinity lowers mana costs. More:
+that makes the next potion weaker; lingering clouds give a little each second without it), Magical Stability (−15 % Mana Cost) and Borrowed Power (cast into debt, backlash
+damage in percent of max health when it ends in debt), with configurable brewing ingredients. The potion tooltips
+explain each effect with the values from the server config. Spell Engine's Spell Infinity lowers mana costs. More:
 [Wiki → Enchantments](https://github.com/Drehverschluss/RunelessRPG/wiki/Enchantments),
 [Wiki → Potions](https://github.com/Drehverschluss/RunelessRPG/wiki/Potions).
 

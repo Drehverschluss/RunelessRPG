@@ -1,5 +1,6 @@
 package com.drehverschluss.runelessrpg;
 
+import com.drehverschluss.runelessrpg.client.PotionTooltip;
 import com.drehverschluss.runelessrpg.client.config.RunelessClientConfig;
 import com.drehverschluss.runelessrpg.client.hud.ManaHudLayer;
 import com.drehverschluss.runelessrpg.client.hud.ManaHudTooltip;
@@ -43,6 +44,7 @@ public class RunelessRPGClient {
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Pre.class, event -> CastContext.clear());
         NeoForge.EVENT_BUS.addListener(RunelessRPGClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(ManaHudTooltip::onScreenRender);
+        NeoForge.EVENT_BUS.addListener(PotionTooltip::onItemTooltip);
     }
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {

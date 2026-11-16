@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.2.1
+
+### Lingering Potions of Mana
+
+- A lingering cloud of Mana now restores **5 % of max mana per level each second** to every player inside (Mana I 5 %,
+  Mana II 10 %), paying debt back first. It **causes no Mana Sickness and is not weakened by it**, so it works
+  alongside a drunk potion. The cloud shrinks with every application: one player gets about five seconds of it
+  (about 25 % / 50 % in total), several players share it.
+- Before, a cloud gave half of a normal potion at the first touch and caused Mana Sickness, which then cut every
+  further second down to a quarter.
+- New server config option `lingeringManaPercentPerLevel` in `[potions]` (default 5).
+- Drunk and splash potions and tipped arrows are unchanged.
+
+### Potion tooltips
+
+- Potions, splash and lingering potions and tipped arrows with a RunelessRPG effect now explain what they do, in short
+  gray lines right below the effect line (always visible, also in the creative inventory and in JEI):
+  - Potion of Mana I/II: how much max mana it restores (splash: up to; arrow: on hit) and the following Mana
+    Sickness; lingering: the share each second in the cloud and that it causes no Mana Sickness.
+  - Magical Stability: that mana cost still never drops below the floor (`minManaCostPercent`).
+  - Borrowed Power: the debt limit and the backlash, in percent of max health or as fixed damage, depending on
+    `backlashMode`.
+- The numbers come from the server config and update when it is reloaded, without reconnecting. Lines whose value is
+  turned off (e.g. `manaSicknessSeconds = 0`) are left out.
+- Descriptions for effect description mods such as Just Enough Effect Descriptions (JEED):
+  `effect.runelessrpg.<id>.description` for Mana Restoration, Magical Stability, Borrowed Power and Mana Sickness.
+
+### Other
+
+- Network protocol 9 (the cost settings packet now carries the Mana Sickness, backlash and lingering values): clients and servers
+  need the same RunelessRPG version, 0.2.0 and 0.2.1 cannot join each other.
+
 ## 0.2.0
 
 > **Existing configs change automatically:** the new option `backlashMode` in `[potions]` is added to existing
