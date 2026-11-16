@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2
+
+- Shorter effect descriptions for Just Enough Effect Descriptions (JEED), English and German. Each one now fits into a single box on the JEI page instead of being split into two.
+- No other changes. Network protocol 9 as in 0.2.1, so 0.2.1 and 0.2.2 can join each other.
+
 ## 0.2.1
 
 ### Lingering Potions of Mana
