@@ -15,6 +15,7 @@ import com.drehverschluss.runelessrpg.item.RunelessItems;
 import com.drehverschluss.runelessrpg.mana.ManaAttachments;
 import com.drehverschluss.runelessrpg.mana.ManaEvents;
 import com.drehverschluss.runelessrpg.network.RunelessNetwork;
+import com.drehverschluss.runelessrpg.orb.ManaOrbs;
 import com.drehverschluss.runelessrpg.potion.RunelessPotions;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
@@ -42,6 +43,7 @@ public class RunelessRPG {
         RunelessAttributes.register(modEventBus);
         RunelessItems.register(modEventBus);
         RunelessPotions.register(modEventBus);
+        ManaOrbs.register(modEventBus);
         ManaAttachments.register(modEventBus);
         RunelessNetwork.register(modEventBus);
         ManaEvents.register(modEventBus);

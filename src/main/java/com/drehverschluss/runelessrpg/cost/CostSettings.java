@@ -49,13 +49,24 @@ public record CostSettings(
         double backlashMaxHealthPercent,
         double backlashDamagePer10Percent,
         double backlashMaxDamage,
-        double lingeringManaPercentPerLevel) {
+        double lingeringManaPercentPerLevel,
+        int manaHarvestDurationSeconds,
+        int longManaHarvestDurationSeconds,
+        int strongManaHarvestDurationSeconds,
+        boolean manaOrbsEnabled,
+        double orbManaPercent,
+        double killBaseChancePercent,
+        double killChancePercentPerLevel,
+        double bossHitBaseChancePercent,
+        double bossHitChancePercentPerLevel,
+        double bossHitCooldownSeconds) {
 
     public static final CostSettings DEFAULTS = new CostSettings(ManaMode.FULL_COST, 50.0, true, 50.0,
             List.of(4.0, 5.0, 7.0, 10.0, 14.0, 18.0), true, 1.0, true, 0.75, true, 0.5, false, 1.0, ChannelCostMode.DRAIN, 0.0,
             0.5, true, SpellInfinityMode.REDUCE_COST, 20.0, 20.0,
             25.0, 0.15, 180, 480, 30, 50.0, true, true,
-            20, 25.0, BacklashMode.PERCENT_MAX_HEALTH, 10.0, 50.0, 2.0, 10.0, 5.0);
+            20, 25.0, BacklashMode.PERCENT_MAX_HEALTH, 10.0, 50.0, 2.0, 10.0, 5.0,
+            180, 480, 90, true, 3.0, 0.0, 50.0, 0.0, 10.0, 3.0);
 
     public static final StreamCodec<FriendlyByteBuf, CostSettings> STREAM_CODEC = StreamCodec.of(CostSettings::write, CostSettings::read);
 
@@ -122,7 +133,17 @@ public record CostSettings(
                 RunelessServerConfig.BACKLASH_MAX_HEALTH_PERCENT.get(),
                 RunelessServerConfig.BACKLASH_DAMAGE_PER_10_PERCENT.get(),
                 RunelessServerConfig.BACKLASH_MAX_DAMAGE.get(),
-                RunelessServerConfig.LINGERING_MANA_PERCENT_PER_LEVEL.get());
+                RunelessServerConfig.LINGERING_MANA_PERCENT_PER_LEVEL.get(),
+                RunelessServerConfig.MANA_HARVEST_DURATION.get(),
+                RunelessServerConfig.LONG_MANA_HARVEST_DURATION.get(),
+                RunelessServerConfig.STRONG_MANA_HARVEST_DURATION.get(),
+                RunelessServerConfig.MANA_ORBS_ENABLED.get(),
+                RunelessServerConfig.ORB_MANA_PERCENT.get(),
+                RunelessServerConfig.KILL_BASE_CHANCE_PERCENT.get(),
+                RunelessServerConfig.KILL_CHANCE_PERCENT_PER_LEVEL.get(),
+                RunelessServerConfig.BOSS_HIT_BASE_CHANCE_PERCENT.get(),
+                RunelessServerConfig.BOSS_HIT_CHANCE_PERCENT_PER_LEVEL.get(),
+                RunelessServerConfig.BOSS_HIT_COOLDOWN_SECONDS.get());
     }
 
     /** Tier table lookup: higher tiers use the last value, negative tiers the first. */
@@ -174,6 +195,16 @@ public record CostSettings(
         buf.writeDouble(s.backlashDamagePer10Percent);
         buf.writeDouble(s.backlashMaxDamage);
         buf.writeDouble(s.lingeringManaPercentPerLevel);
+        buf.writeVarInt(s.manaHarvestDurationSeconds);
+        buf.writeVarInt(s.longManaHarvestDurationSeconds);
+        buf.writeVarInt(s.strongManaHarvestDurationSeconds);
+        buf.writeBoolean(s.manaOrbsEnabled);
+        buf.writeDouble(s.orbManaPercent);
+        buf.writeDouble(s.killBaseChancePercent);
+        buf.writeDouble(s.killChancePercentPerLevel);
+        buf.writeDouble(s.bossHitBaseChancePercent);
+        buf.writeDouble(s.bossHitChancePercentPerLevel);
+        buf.writeDouble(s.bossHitCooldownSeconds);
     }
 
     private static CostSettings read(FriendlyByteBuf buf) {
@@ -194,6 +225,8 @@ public record CostSettings(
                 buf.readDouble(), buf.readDouble(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readDouble(),
                 buf.readBoolean(), buf.readBoolean(),
                 buf.readVarInt(), buf.readDouble(), buf.readEnum(BacklashMode.class),
+                buf.readDouble(), buf.readDouble(), buf.readDouble(), buf.readDouble(), buf.readDouble(),
+                buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readBoolean(), buf.readDouble(),
                 buf.readDouble(), buf.readDouble(), buf.readDouble(), buf.readDouble(), buf.readDouble());
     }
 }

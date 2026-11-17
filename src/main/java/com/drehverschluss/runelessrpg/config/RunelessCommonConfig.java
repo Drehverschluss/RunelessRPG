@@ -15,6 +15,9 @@ public final class RunelessCommonConfig {
     public static final ModConfigSpec.ConfigValue<String> MAGICAL_STABILITY_INGREDIENT;
     public static final ModConfigSpec.ConfigValue<String> LONG_MAGICAL_STABILITY_INGREDIENT;
     public static final ModConfigSpec.ConfigValue<String> BORROWED_POWER_INGREDIENT;
+    public static final ModConfigSpec.ConfigValue<String> MANA_HARVEST_INGREDIENT;
+    public static final ModConfigSpec.ConfigValue<String> LONG_MANA_HARVEST_INGREDIENT;
+    public static final ModConfigSpec.ConfigValue<String> STRONG_MANA_HARVEST_INGREDIENT;
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -28,6 +31,12 @@ public final class RunelessCommonConfig {
                 "Potion of Magical Stability -> long Potion of Magical Stability", "minecraft:redstone");
         BORROWED_POWER_INGREDIENT = ingredient(builder, "borrowedPowerIngredient",
                 "Potion of Mana -> Potion of Borrowed Power", "minecraft:fermented_spider_eye");
+        MANA_HARVEST_INGREDIENT = ingredient(builder, "manaHarvestIngredient",
+                "Potion of Mana -> Potion of Mana Harvest", "minecraft:rabbit_foot");
+        LONG_MANA_HARVEST_INGREDIENT = ingredient(builder, "longManaHarvestIngredient",
+                "Potion of Mana Harvest -> long Potion of Mana Harvest", "minecraft:redstone");
+        STRONG_MANA_HARVEST_INGREDIENT = ingredient(builder, "strongManaHarvestIngredient",
+                "Potion of Mana Harvest -> Potion of Mana Harvest II", "minecraft:glowstone_dust");
         builder.pop();
         SPEC = builder.build();
     }

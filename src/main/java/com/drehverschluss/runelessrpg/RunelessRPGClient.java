@@ -1,5 +1,6 @@
 package com.drehverschluss.runelessrpg;
 
+import com.drehverschluss.runelessrpg.client.ManaOrbRenderer;
 import com.drehverschluss.runelessrpg.client.PotionTooltip;
 import com.drehverschluss.runelessrpg.client.config.RunelessClientConfig;
 import com.drehverschluss.runelessrpg.client.hud.ManaHudLayer;
@@ -8,6 +9,7 @@ import com.drehverschluss.runelessrpg.client.hud.ManaTextFade;
 import com.drehverschluss.runelessrpg.client.screen.ManaHudEditScreen;
 import com.drehverschluss.runelessrpg.client.screen.RunelessConfigMenuScreen;
 import com.drehverschluss.runelessrpg.cost.CastContext;
+import com.drehverschluss.runelessrpg.orb.ManaOrbs;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -20,6 +22,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
@@ -41,6 +44,8 @@ public class RunelessRPGClient {
         modEventBus.addListener(RunelessRPGClient::onRegisterKeyMappings);
         modEventBus.addListener(RunelessRPGClient::onConfigLoading);
         modEventBus.addListener(RunelessRPGClient::onConfigReloading);
+        modEventBus.addListener(EntityRenderersEvent.RegisterRenderers.class,
+                event -> event.registerEntityRenderer(ManaOrbs.MANA_ORB.get(), ManaOrbRenderer::new));
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Pre.class, event -> CastContext.clear());
         NeoForge.EVENT_BUS.addListener(RunelessRPGClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(ManaHudTooltip::onScreenRender);

@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.3.0
+
+### Mana orbs
+
+- New entity Mana Orb (`runelessrpg:mana_orb`): a blue orb that restores 3 % of the max mana of whoever picks it up, paying debt back first. Any player picks it up on touch, also with full mana (then the orb is used up). Mobs and spectators never pick orbs up.
+- Orbs stay on the ground for 30 seconds and do not fly to players. Nearby orbs merge like experience orbs; a player takes one after the other.
+- Orbs cannot be destroyed by explosions, fire, lava or attacks. In lava they are thrown up like experience orbs.
+- Orbs neither cause Mana Sickness nor are they weakened by it. `ManaChangeEvent` has the new reason `ORB`.
+- Without the new potion no orbs drop by default.
+
+### Potion of Mana Harvest
+
+- New effect Mana Harvest (`runelessrpg:mana_harvest`) and its potions: Potion of Mana + rabbit's foot (3:00), with redstone 8:00, with glowstone level II (1:30). Splash, lingering and tipped arrow forms work like vanilla.
+- Monsters killed by a player with Mana Harvest drop an orb: 50 % chance with level I, 100 % with level II. Only kills that would drop experience count (the player hit the mob, `doMobLoot` on); fake players of mob farms, deployers and killer blocks never count. Looting changes nothing.
+- Several kills by the same player in the same tick (area spells) count less: the first one gets the full chance, every further one 25 % of it.
+- Bosses (`#runelessrpg:mana_orb_bosses`, contains `#c:bosses`) drop no orbs when they die. Instead, every hit the player causes on a boss creates an orb with 10 % (I) or 20 % (II) chance, at most one every 3 seconds per player. The orb appears on free ground 2 to 4 blocks around the player, so spellcasters at range and team mates can pick it up. Thorns damage does not count.
+- The potion restores no mana itself and causes no Mana Sickness.
+- The potion tooltips explain the chances with the values from the server config, and Just Enough Effect Descriptions shows a short description.
+
+### For pack developers
+
+- New server config section `[mana_orbs]`: `enabled`, `orbManaPercent`, `orbLifetimeSeconds`, `killBaseChancePercent` (0), `killChancePercentPerLevel` (50), `extraKillPercent` (25), `killCooldownSeconds` (0), `killMobCategories` (`["MONSTER"]`), `bossKillOrbs` (0), `bossHitBaseChancePercent` (0), `bossHitChancePercentPerLevel` (10), `bossHitCooldownSeconds` (3), `bossOrbMinDistance` and `bossOrbMaxDistance` (2 and 4). A base chance above 0 turns on orbs without the potion; the kill cooldown can slow them down.
+- New options in `[potions]`: `manaHarvestDurationSeconds` (180), `longManaHarvestDurationSeconds` (480), `strongManaHarvestDurationSeconds` (90). New brewing ingredients in the common config: `manaHarvestIngredient`, `longManaHarvestIngredient`, `strongManaHarvestIngredient`.
+- New data files `data/<ns>/runelessrpg/mana_orbs/*.json` with a chance `factor`, an orb `count` and an optional `baseChance` per mob or entity tag. A file with the same path replaces the one from a lower pack.
+- New tags: `#runelessrpg:no_mana_orbs` (mobs that never drop orbs), `#runelessrpg:mana_orb_bosses` (boss rules) and the damage type tag `#runelessrpg:mana_orbs/ignored_damage` (thorns).
+
+### Other
+
+- Network protocol 10 (the cost settings packet now carries the mana orb and Mana Harvest values): clients and servers need the same RunelessRPG version.
+
 ## 0.2.2
 
 - Shorter effect descriptions for Just Enough Effect Descriptions (JEED), English and German. Each one now fits into a single box on the JEI page instead of being split into two.

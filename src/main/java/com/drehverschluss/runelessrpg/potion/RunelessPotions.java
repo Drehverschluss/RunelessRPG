@@ -47,6 +47,9 @@ public final class RunelessPotions {
     /** Allows casting into debt down to a percentage of max mana; backlash damage when it ends in debt. */
     public static final DeferredHolder<MobEffect, MobEffect> BORROWED_POWER = EFFECTS.register("borrowed_power",
             () -> new MobEffect(MobEffectCategory.NEUTRAL, 0x6B4BE0) {});
+    /** Monsters killed by the player drop mana orbs, hits on bosses create them (see {@code orb.ManaOrbs}). */
+    public static final DeferredHolder<MobEffect, MobEffect> MANA_HARVEST = EFFECTS.register("mana_harvest",
+            () -> new MobEffect(MobEffectCategory.BENEFICIAL, 0xE0B040) {});
 
     public static final DeferredHolder<Potion, Potion> MANA = POTIONS.register("mana",
             () -> new Potion(name("mana"), new MobEffectInstance(MANA_RESTORE, 1, 0)));
@@ -58,6 +61,12 @@ public final class RunelessPotions {
             () -> new ConfiguredPotion(name("magical_stability"), MAGICAL_STABILITY, 0, CostSettings::longMagicalStabilityDurationSeconds));
     public static final DeferredHolder<Potion, Potion> BORROWED_POWER_POTION = POTIONS.register("borrowed_power",
             () -> new ConfiguredPotion(name("borrowed_power"), BORROWED_POWER, 0, CostSettings::borrowedPowerDurationSeconds));
+    public static final DeferredHolder<Potion, Potion> MANA_HARVEST_POTION = POTIONS.register("mana_harvest",
+            () -> new ConfiguredPotion(name("mana_harvest"), MANA_HARVEST, 0, CostSettings::manaHarvestDurationSeconds));
+    public static final DeferredHolder<Potion, Potion> LONG_MANA_HARVEST_POTION = POTIONS.register("long_mana_harvest",
+            () -> new ConfiguredPotion(name("mana_harvest"), MANA_HARVEST, 0, CostSettings::longManaHarvestDurationSeconds));
+    public static final DeferredHolder<Potion, Potion> STRONG_MANA_HARVEST_POTION = POTIONS.register("strong_mana_harvest",
+            () -> new ConfiguredPotion(name("mana_harvest"), MANA_HARVEST, 1, CostSettings::strongManaHarvestDurationSeconds));
 
     /** Damage when Borrowed Power ends in debt; in {@code #minecraft:bypasses_armor} and {@code #minecraft:bypasses_enchantments}. */
     public static final ResourceKey<DamageType> MANA_BACKLASH = ResourceKey.create(Registries.DAMAGE_TYPE, id("mana_backlash"));
@@ -89,6 +98,9 @@ public final class RunelessPotions {
         mix(builder, MANA, RunelessCommonConfig.MAGICAL_STABILITY_INGREDIENT, MAGICAL_STABILITY_POTION);
         mix(builder, MAGICAL_STABILITY_POTION, RunelessCommonConfig.LONG_MAGICAL_STABILITY_INGREDIENT, LONG_MAGICAL_STABILITY_POTION);
         mix(builder, MANA, RunelessCommonConfig.BORROWED_POWER_INGREDIENT, BORROWED_POWER_POTION);
+        mix(builder, MANA, RunelessCommonConfig.MANA_HARVEST_INGREDIENT, MANA_HARVEST_POTION);
+        mix(builder, MANA_HARVEST_POTION, RunelessCommonConfig.LONG_MANA_HARVEST_INGREDIENT, LONG_MANA_HARVEST_POTION);
+        mix(builder, MANA_HARVEST_POTION, RunelessCommonConfig.STRONG_MANA_HARVEST_INGREDIENT, STRONG_MANA_HARVEST_POTION);
     }
 
     private static void mix(PotionBrewing.Builder builder, Holder<Potion> input, ModConfigSpec.ConfigValue<String> ingredient, Holder<Potion> output) {

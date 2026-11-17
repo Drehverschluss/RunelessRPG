@@ -62,6 +62,24 @@ public final class RunelessServerConfig {
     public static final ModConfigSpec.DoubleValue BACKLASH_MAX_HEALTH_PERCENT;
     public static final ModConfigSpec.DoubleValue BACKLASH_DAMAGE_PER_10_PERCENT;
     public static final ModConfigSpec.DoubleValue BACKLASH_MAX_DAMAGE;
+    public static final ModConfigSpec.IntValue MANA_HARVEST_DURATION;
+    public static final ModConfigSpec.IntValue LONG_MANA_HARVEST_DURATION;
+    public static final ModConfigSpec.IntValue STRONG_MANA_HARVEST_DURATION;
+
+    public static final ModConfigSpec.BooleanValue MANA_ORBS_ENABLED;
+    public static final ModConfigSpec.DoubleValue ORB_MANA_PERCENT;
+    public static final ModConfigSpec.IntValue ORB_LIFETIME_SECONDS;
+    public static final ModConfigSpec.DoubleValue KILL_BASE_CHANCE_PERCENT;
+    public static final ModConfigSpec.DoubleValue KILL_CHANCE_PERCENT_PER_LEVEL;
+    public static final ModConfigSpec.DoubleValue EXTRA_KILL_PERCENT;
+    public static final ModConfigSpec.DoubleValue KILL_COOLDOWN_SECONDS;
+    public static final ModConfigSpec.ConfigValue<List<? extends String>> KILL_MOB_CATEGORIES;
+    public static final ModConfigSpec.IntValue BOSS_KILL_ORBS;
+    public static final ModConfigSpec.DoubleValue BOSS_HIT_BASE_CHANCE_PERCENT;
+    public static final ModConfigSpec.DoubleValue BOSS_HIT_CHANCE_PERCENT_PER_LEVEL;
+    public static final ModConfigSpec.DoubleValue BOSS_HIT_COOLDOWN_SECONDS;
+    public static final ModConfigSpec.DoubleValue BOSS_ORB_MIN_DISTANCE;
+    public static final ModConfigSpec.DoubleValue BOSS_ORB_MAX_DISTANCE;
 
     /** Effect of the enchantment spell_engine:spell_infinity on mana costs. */
     public enum SpellInfinityMode {
@@ -270,6 +288,68 @@ public final class RunelessServerConfig {
         BACKLASH_MAX_DAMAGE = builder
                 .comment("FLAT: maximum backlash damage")
                 .defineInRange("backlashMaxDamage", 10.0, 0.0, 100000.0);
+        MANA_HARVEST_DURATION = builder
+                .comment("Potion of Mana Harvest: duration in seconds")
+                .defineInRange("manaHarvestDurationSeconds", 180, 1, 86400);
+        LONG_MANA_HARVEST_DURATION = builder
+                .comment("Long Potion of Mana Harvest (redstone): duration in seconds")
+                .defineInRange("longManaHarvestDurationSeconds", 480, 1, 86400);
+        STRONG_MANA_HARVEST_DURATION = builder
+                .comment("Potion of Mana Harvest II (glowstone): duration in seconds")
+                .defineInRange("strongManaHarvestDurationSeconds", 90, 1, 86400);
+        builder.pop();
+
+        builder.comment("Mana orbs (entity runelessrpg:mana_orb): dropped by monsters a player kills, mostly with the potion of Mana Harvest.",
+                "Orbs stay on the ground (they do not fly to players); any player picks them up on touch, also with full mana.",
+                "Per-mob chances and counts: data/<ns>/runelessrpg/mana_orbs/*.json. Tags: #runelessrpg:no_mana_orbs (never),",
+                "#runelessrpg:mana_orb_bosses (boss rules, contains #c:bosses), damage type tag #runelessrpg:mana_orbs/ignored_damage").push("mana_orbs");
+        MANA_ORBS_ENABLED = builder
+                .comment("Mana orbs on/off. Off = no new orbs, orbs on the ground disappear")
+                .define("enabled", true);
+        ORB_MANA_PERCENT = builder
+                .comment("Mana per orb in percent of the max mana of the player who picks it up. Pays debt back first.",
+                        "Orbs neither cause Mana Sickness nor are they weakened by it")
+                .defineInRange("orbManaPercent", 3.0, 0.0, 100.0);
+        ORB_LIFETIME_SECONDS = builder
+                .comment("How long an orb lies on the ground, in seconds")
+                .defineInRange("orbLifetimeSeconds", 30, 1, 3600);
+        KILL_BASE_CHANCE_PERCENT = builder
+                .comment("Chance per kill in percent without Mana Harvest (0 = orbs only with the potion).",
+                        "Only kills that would drop experience count (a real player hit the mob, doMobLoot on); fake players never count")
+                .defineInRange("killBaseChancePercent", 0.0, 0.0, 100.0);
+        KILL_CHANCE_PERCENT_PER_LEVEL = builder
+                .comment("Added to the kill chance per level of Mana Harvest of the killing player (I = 50%, II = 100%)")
+                .defineInRange("killChancePercentPerLevel", 50.0, 0.0, 100.0);
+        EXTRA_KILL_PERCENT = builder
+                .comment("Further kills by the same player in the same game tick (area spells) get this percentage of the chance")
+                .defineInRange("extraKillPercent", 25.0, 0.0, 100.0);
+        KILL_COOLDOWN_SECONDS = builder
+                .comment("After a kill dropped orbs, further kills of this player drop none for this many seconds (0 = off)")
+                .defineInRange("killCooldownSeconds", 0.0, 0.0, 3600.0);
+        KILL_MOB_CATEGORIES = builder
+                .comment("Mob categories that can drop orbs (MONSTER, CREATURE, AMBIENT, AXOLOTLS, UNDERGROUND_WATER_CREATURE,",
+                        "WATER_CREATURE, WATER_AMBIENT, MISC). Mobs with an entry in a mana_orbs data file can always drop orbs")
+                .defineListAllowEmpty("killMobCategories", List.of("MONSTER"), () -> "MONSTER", value -> value instanceof String);
+        BOSS_KILL_ORBS = builder
+                .comment("Orbs dropped when a boss (#runelessrpg:mana_orb_bosses) is killed by a player. The kill chance does not apply to bosses")
+                .defineInRange("bossKillOrbs", 0, 0, 64);
+        BOSS_HIT_BASE_CHANCE_PERCENT = builder
+                .comment("Chance per hit on a boss in percent without Mana Harvest (0 = only with the potion).",
+                        "Every hit the player causes counts (melee, projectiles, spells, channel ticks, clouds, summons), except",
+                        "damage types in #runelessrpg:mana_orbs/ignored_damage (thorns)")
+                .defineInRange("bossHitBaseChancePercent", 0.0, 0.0, 100.0);
+        BOSS_HIT_CHANCE_PERCENT_PER_LEVEL = builder
+                .comment("Added to the boss hit chance per level of Mana Harvest (I = 10%, II = 20%)")
+                .defineInRange("bossHitChancePercentPerLevel", 10.0, 0.0, 100.0);
+        BOSS_HIT_COOLDOWN_SECONDS = builder
+                .comment("At most one orb from boss hits per player in this many seconds (0 = no limit)")
+                .defineInRange("bossHitCooldownSeconds", 3.0, 0.0, 3600.0);
+        BOSS_ORB_MIN_DISTANCE = builder
+                .comment("An orb from a boss hit appears on free ground this many blocks around the player (minimum)")
+                .defineInRange("bossOrbMinDistance", 2.0, 0.0, 16.0);
+        BOSS_ORB_MAX_DISTANCE = builder
+                .comment("Maximum distance of an orb from a boss hit")
+                .defineInRange("bossOrbMaxDistance", 4.0, 0.0, 16.0);
         builder.pop();
 
         SPEC = builder.build();

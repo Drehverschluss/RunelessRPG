@@ -33,6 +33,7 @@ hotbar, docked at Miki's Fantasy HUD when it is installed.
 |---|---|
 | ![Spell tooltip with mana cost](docs/images/tooltip-spell-costs.png) | ![Layout editor](docs/images/hud-editor.png) |
 | ![Attributes on gear](docs/images/tooltip-attributes.png) | ![Mana potions](docs/images/potion-effects.png) |
+| ![Mana orbs on the ground](docs/images/mana-orbs.png) | ![Potion of Mana Harvest](docs/images/tooltip-potion-mana-harvest.png) |
 
 ## How it works
 
@@ -107,6 +108,14 @@ explain each effect with the values from the server config. Spell Engine's Spell
 [Wiki → Enchantments](https://github.com/Drehverschluss/RunelessRPG/wiki/Enchantments),
 [Wiki → Potions](https://github.com/Drehverschluss/RunelessRPG/wiki/Potions).
 
+### Mana orbs
+
+With the Potion of Mana Harvest, monsters you kill drop blue mana orbs (50 % chance per potion level), and hits on
+bosses create orbs on free ground near you (10 % per level, at most one every 3 seconds). An orb restores 3 % of max
+mana to whoever picks it up; orbs stay on the ground for 30 seconds and do not fly to players. Several kills in the
+same tick (area spells) give fewer orbs. Without the potion no orbs drop by default; packs can switch on a base chance,
+per-mob values and boss tags. More: [Wiki → Mana Orbs](https://github.com/Drehverschluss/RunelessRPG/wiki/Mana-Orbs).
+
 ### Apotheosis
 
 With Apotheosis, six affixes for the six attributes; the spell weapon affixes only roll on spell weapons thanks to an
@@ -123,6 +132,7 @@ switched off with one warning and the rest keeps working. More:
 | | `costs` | `tierCosts`, `*Enabled` and `*Multiplier` per category |
 | | `channel` | `channelCostMode` (`DRAIN` / `START` / `END`), `cooldownOnChannelAbort` |
 | | `overcharge`, `mana_leech`, `spell_infinity`, `potions` | Factors and values of these features |
+| | `mana_orbs` | `enabled`, `orbManaPercent` (3), `killBaseChancePercent` (0), `killChancePercentPerLevel` (50), `bossHitChancePercentPerLevel` (10), `bossHitCooldownSeconds` (3) |
 | `runelessrpg-common.toml` | `brewing` | Brewing ingredients |
 | `runelessrpg-client.toml` | `hud`, `text`, `flash` | Style, anchor, offsets, scale, colors, mana number, flash |
 
@@ -139,6 +149,9 @@ The server config is sent to the clients and applies while the game runs. All op
 | `data/runelessrpg/tags/item/enchantable/armor.json`, `magic_weapon.json`, `weapon.json` | Items for the enchantments and the spell weapon affixes |
 | `data/runelessrpg/tags/damage_type/mana_leech/weapon_damage.json` | Damage types that count for Mana Leech |
 | `data/runelessrpg/tags/entity_type/no_mana_leech.json` | Entities that never give mana |
+| `data/<ns>/runelessrpg/mana_orbs/*.json` | Mana orb chance factor, count and base chance per mob or entity tag |
+| `data/runelessrpg/tags/entity_type/no_mana_orbs.json`, `mana_orb_bosses.json` | Mobs that never drop orbs; bosses (orbs from hits, contains `#c:bosses`) |
+| `data/runelessrpg/tags/damage_type/mana_orbs/ignored_damage.json` | Damage types that never create orbs from boss hits (thorns) |
 | `data/runelessrpg/enchantment/*.json`, `data/runelessrpg/affixes/**` | Enchantments and Apotheosis affixes |
 | `config/runelessrpg/spell_costs_report.json` | Generated overview of all spells with category and base cost |
 
@@ -158,6 +171,9 @@ KubeJS: [Wiki → API and events](https://github.com/Drehverschluss/RunelessRPG/
 - **RPG Series equipment configs, Dungeon Difficulty, KubeJS**: the attributes are normal attributes; examples in
   [Wiki → Pack integration](https://github.com/Drehverschluss/RunelessRPG/wiki/Pack-Integration).
 - **Gearscope** shows the attribute icons.
+- **Boss mods**: bosses in `#c:bosses` (Cataclysm, Bosses of Mass Destruction, Mowzie's Mobs, vanilla) use the boss
+  rules for mana orbs automatically; others can be added to `#runelessrpg:mana_orb_bosses`.
+- **Just Enough Effect Descriptions (JEED)** shows short descriptions of all five effects.
 
 ## Project layout
 
@@ -170,6 +186,7 @@ KubeJS: [Wiki → API and events](https://github.com/Drehverschluss/RunelessRPG/
 | `cost` | Categories, cost calculation, cast check, channeled spells, datapack costs, cost report |
 | `impact` | Overcharge, Mana Leech and Spell Mana Leech, origin of spell hits |
 | `potion` | Effects, potions, brewing, Borrowed Power |
+| `orb` | Mana orb entity, drop rules for kills and boss hits, per-mob data files |
 | `item` | The placeholder item `runelessrpg:mana` (shown as the missing item) |
 | `config` | Server and common config |
 | `command` | `/runelessrpg` |

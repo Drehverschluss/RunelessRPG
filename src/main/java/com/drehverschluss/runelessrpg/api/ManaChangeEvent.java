@@ -40,7 +40,12 @@ public class ManaChangeEvent extends Event {
          * Potion of Mana ({@code runelessrpg:mana_restore}): drunk, splash, lingering cloud or tipped arrow. Never above
          * max mana; pays back debt.
          */
-        POTION
+        POTION,
+        /**
+         * Mana orb ({@code runelessrpg:mana_orb}) picked up, since 0.3.0. Never above max mana; pays back debt. Not
+         * affected by Mana Sickness.
+         */
+        ORB
     }
 
     private final Player player;

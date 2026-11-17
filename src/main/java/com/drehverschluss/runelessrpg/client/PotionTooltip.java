@@ -111,8 +111,29 @@ public final class PotionTooltip {
             if (settings.magicalStabilityManaCost() > 0.0 && settings.minManaCostPercent() > 0.0) {
                 lines.add(line("magical_stability", percent(settings.minManaCostPercent())));
             }
+        } else if (effect == RunelessPotions.MANA_HARVEST.get()) {
+            manaHarvest(instance.getAmplifier() + 1, settings, lines);
         }
         return lines;
+    }
+
+    // Same lines for every form: the effect counts for whoever has it when killing or hitting
+    private static void manaHarvest(int level, CostSettings settings, List<Component> lines) {
+        if (!settings.manaOrbsEnabled()) {
+            return;
+        }
+        double kill = Math.min(100.0, settings.killBaseChancePercent() + level * settings.killChancePercentPerLevel());
+        if (kill > 0.0) {
+            lines.add(line("mana_harvest", percent(kill), percent(settings.orbManaPercent())));
+        }
+        double boss = Math.min(100.0, settings.bossHitBaseChancePercent() + level * settings.bossHitChancePercentPerLevel());
+        if (boss > 0.0) {
+            if (settings.bossHitCooldownSeconds() > 0.0) {
+                lines.add(line("mana_harvest.boss", percent(boss), CostFormat.format(settings.bossHitCooldownSeconds())));
+            } else {
+                lines.add(line("mana_harvest.boss.no_cooldown", percent(boss)));
+            }
+        }
     }
 
     private static void manaRestore(int amplifier, Form form, CostSettings settings, List<Component> lines) {
