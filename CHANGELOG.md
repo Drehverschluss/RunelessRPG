@@ -5,7 +5,9 @@
 ### Mana orbs
 
 - New entity Mana Orb (`runelessrpg:mana_orb`): a blue orb that restores 3 % of the max mana of whoever picks it up, paying debt back first. Any player picks it up on touch, also with full mana (then the orb is used up). Mobs and spectators never pick orbs up.
-- Orbs stay on the ground for 30 seconds and do not fly to players. Nearby orbs merge like experience orbs; a player takes one after the other.
+- Orbs stay on the ground for 30 seconds and do not fly to players. Up to 5 nearby orbs merge into one bigger orb; the rest stays as an orb of its own (7 orbs give 5 + 2). The orb grows with every orb in it, up to 5.
+- A touch takes the whole orb at once: a full orb gives 5 × 3 % = 15 % of max mana. You see at a glance what an orb is worth and decide whether to take it or leave it to a team mate.
+- Full orbs sparkle: golden sparks rise slowly from them and they pulse gently, so you spot them on the ground. The sparkles follow the particle setting of the game.
 - Orbs cannot be destroyed by explosions, fire, lava or attacks. In lava they are thrown up like experience orbs.
 - Orbs neither cause Mana Sickness nor are they weakened by it. `ManaChangeEvent` has the new reason `ORB`.
 - Without the new potion no orbs drop by default.
@@ -21,9 +23,10 @@
 
 ### For pack developers
 
-- New server config section `[mana_orbs]`: `enabled`, `orbManaPercent`, `orbLifetimeSeconds`, `killBaseChancePercent` (0), `killChancePercentPerLevel` (50), `extraKillPercent` (25), `killCooldownSeconds` (0), `killMobCategories` (`["MONSTER"]`), `bossKillOrbs` (0), `bossHitBaseChancePercent` (0), `bossHitChancePercentPerLevel` (10), `bossHitCooldownSeconds` (3), `bossOrbMinDistance` and `bossOrbMaxDistance` (2 and 4). A base chance above 0 turns on orbs without the potion; the kill cooldown can slow them down.
+- New server config section `[mana_orbs]`: `enabled`, `orbManaPercent`, `orbLifetimeSeconds`, `maxOrbsPerStack` (5, 1 = no merging), `killBaseChancePercent` (0), `killChancePercentPerLevel` (50), `extraKillPercent` (25), `killCooldownSeconds` (0), `killMobCategories` (`["MONSTER"]`), `bossKillOrbs` (0), `bossHitBaseChancePercent` (0), `bossHitChancePercentPerLevel` (10), `bossHitCooldownSeconds` (3), `bossOrbMinDistance` and `bossOrbMaxDistance` (2 and 4). A base chance above 0 turns on orbs without the potion; the kill cooldown can slow them down.
 - New options in `[potions]`: `manaHarvestDurationSeconds` (180), `longManaHarvestDurationSeconds` (480), `strongManaHarvestDurationSeconds` (90). New brewing ingredients in the common config: `manaHarvestIngredient`, `longManaHarvestIngredient`, `strongManaHarvestIngredient`.
-- New data files `data/<ns>/runelessrpg/mana_orbs/*.json` with a chance `factor`, an orb `count` and an optional `baseChance` per mob or entity tag. A file with the same path replaces the one from a lower pack.
+- New client config section `[mana_orbs]`: `fullOrbEffect` (`BOTH`, `SPARKLES`, `PULSE` or `NONE`) for the effect of full orbs.
+- New data files `data/<ns>/runelessrpg/mana_orbs/*.json` with a chance `factor`, an orb `count` and an optional `baseChance` per mob or entity tag. A file with the same path replaces the one from a lower pack. A `count` above `maxOrbsPerStack` drops several orbs.
 - New tags: `#runelessrpg:no_mana_orbs` (mobs that never drop orbs), `#runelessrpg:mana_orb_bosses` (boss rules) and the damage type tag `#runelessrpg:mana_orbs/ignored_damage` (thorns).
 
 ### Other

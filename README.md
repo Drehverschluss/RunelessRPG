@@ -112,9 +112,11 @@ explain each effect with the values from the server config. Spell Engine's Spell
 
 With the Potion of Mana Harvest, monsters you kill drop blue mana orbs (50 % chance per potion level), and hits on
 bosses create orbs on free ground near you (10 % per level, at most one every 3 seconds). An orb restores 3 % of max
-mana to whoever picks it up; orbs stay on the ground for 30 seconds and do not fly to players. Several kills in the
-same tick (area spells) give fewer orbs. Without the potion no orbs drop by default; packs can switch on a base chance,
-per-mob values and boss tags. More: [Wiki → Mana Orbs](https://github.com/Drehverschluss/RunelessRPG/wiki/Mana-Orbs).
+mana to whoever picks it up; orbs stay on the ground for 30 seconds and do not fly to players. Up to 5 orbs merge into
+one bigger orb, and a touch takes the whole orb at once (5 × 3 % = 15 %), so you see what an orb is worth and decide
+whether to take it or leave it to a team mate. Full orbs sparkle gold and pulse gently. Several kills in the same tick
+(area spells) give fewer orbs. Without the potion no orbs drop by default; packs can switch on a base chance, per-mob
+values and boss tags. More: [Wiki → Mana Orbs](https://github.com/Drehverschluss/RunelessRPG/wiki/Mana-Orbs).
 
 ### Apotheosis
 
@@ -132,9 +134,9 @@ switched off with one warning and the rest keeps working. More:
 | | `costs` | `tierCosts`, `*Enabled` and `*Multiplier` per category |
 | | `channel` | `channelCostMode` (`DRAIN` / `START` / `END`), `cooldownOnChannelAbort` |
 | | `overcharge`, `mana_leech`, `spell_infinity`, `potions` | Factors and values of these features |
-| | `mana_orbs` | `enabled`, `orbManaPercent` (3), `killBaseChancePercent` (0), `killChancePercentPerLevel` (50), `bossHitChancePercentPerLevel` (10), `bossHitCooldownSeconds` (3) |
+| | `mana_orbs` | `enabled`, `orbManaPercent` (3), `maxOrbsPerStack` (5), `killBaseChancePercent` (0), `killChancePercentPerLevel` (50), `bossHitChancePercentPerLevel` (10), `bossHitCooldownSeconds` (3) |
 | `runelessrpg-common.toml` | `brewing` | Brewing ingredients |
-| `runelessrpg-client.toml` | `hud`, `text`, `flash` | Style, anchor, offsets, scale, colors, mana number, flash |
+| `runelessrpg-client.toml` | `hud`, `text`, `flash`, `mana_orbs` | Style, anchor, offsets, scale, colors, mana number, flash, `fullOrbEffect` (`BOTH` / `SPARKLES` / `PULSE` / `NONE`) |
 
 The server config is sent to the clients and applies while the game runs. All options:
 [Wiki → Configuration](https://github.com/Drehverschluss/RunelessRPG/wiki/Configuration).
@@ -191,7 +193,7 @@ KubeJS: [Wiki → API and events](https://github.com/Drehverschluss/RunelessRPG/
 | `config` | Server and common config |
 | `command` | `/runelessrpg` |
 | `network` | Payloads and their registration |
-| `client`, `client.hud`, `client.screen`, `client.config` | Tooltips, mana display, mana number, layout editor, client config |
+| `client`, `client.hud`, `client.screen`, `client.config` | Tooltips, mana display, mana number, layout editor, client config, mana orb look and sparkles |
 | `compat.*` | Apotheosis integration; only loaded when Apotheosis is installed |
 | `mixin` | Spell Engine and vanilla hooks (no `@Overwrite`, no `@Redirect`) |
 | `util` | Cost formatting |

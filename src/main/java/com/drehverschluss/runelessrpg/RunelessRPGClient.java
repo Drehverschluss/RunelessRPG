@@ -1,6 +1,8 @@
 package com.drehverschluss.runelessrpg;
 
 import com.drehverschluss.runelessrpg.client.ManaOrbRenderer;
+import com.drehverschluss.runelessrpg.client.ManaOrbSparkle;
+import com.drehverschluss.runelessrpg.orb.ManaOrb;
 import com.drehverschluss.runelessrpg.client.PotionTooltip;
 import com.drehverschluss.runelessrpg.client.config.RunelessClientConfig;
 import com.drehverschluss.runelessrpg.client.hud.ManaHudLayer;
@@ -46,6 +48,7 @@ public class RunelessRPGClient {
         modEventBus.addListener(RunelessRPGClient::onConfigReloading);
         modEventBus.addListener(EntityRenderersEvent.RegisterRenderers.class,
                 event -> event.registerEntityRenderer(ManaOrbs.MANA_ORB.get(), ManaOrbRenderer::new));
+        ManaOrb.setClientTicker(ManaOrbSparkle::tickOrb);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Pre.class, event -> CastContext.clear());
         NeoForge.EVENT_BUS.addListener(RunelessRPGClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(ManaHudTooltip::onScreenRender);

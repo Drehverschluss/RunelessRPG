@@ -69,6 +69,7 @@ public final class RunelessServerConfig {
     public static final ModConfigSpec.BooleanValue MANA_ORBS_ENABLED;
     public static final ModConfigSpec.DoubleValue ORB_MANA_PERCENT;
     public static final ModConfigSpec.IntValue ORB_LIFETIME_SECONDS;
+    public static final ModConfigSpec.IntValue MAX_ORBS_PER_STACK;
     public static final ModConfigSpec.DoubleValue KILL_BASE_CHANCE_PERCENT;
     public static final ModConfigSpec.DoubleValue KILL_CHANCE_PERCENT_PER_LEVEL;
     public static final ModConfigSpec.DoubleValue EXTRA_KILL_PERCENT;
@@ -313,6 +314,11 @@ public final class RunelessServerConfig {
         ORB_LIFETIME_SECONDS = builder
                 .comment("How long an orb lies on the ground, in seconds")
                 .defineInRange("orbLifetimeSeconds", 30, 1, 3600);
+        MAX_ORBS_PER_STACK = builder
+                .comment("At most this many orbs merge into one big orb (1 = no merging). A touch takes the whole orb at once:",
+                        "count x orbManaPercent (5 x 3% = 15%). Full orbs sparkle on the client. Lowering the value keeps bigger orbs",
+                        "on the ground as they are; they take no more orbs")
+                .defineInRange("maxOrbsPerStack", 5, 1, 100);
         KILL_BASE_CHANCE_PERCENT = builder
                 .comment("Chance per kill in percent without Mana Harvest (0 = orbs only with the potion).",
                         "Only kills that would drop experience count (a real player hit the mob, doMobLoot on); fake players never count")

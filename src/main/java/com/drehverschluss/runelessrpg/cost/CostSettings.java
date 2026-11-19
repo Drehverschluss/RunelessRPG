@@ -59,14 +59,15 @@ public record CostSettings(
         double killChancePercentPerLevel,
         double bossHitBaseChancePercent,
         double bossHitChancePercentPerLevel,
-        double bossHitCooldownSeconds) {
+        double bossHitCooldownSeconds,
+        int maxOrbsPerStack) {
 
     public static final CostSettings DEFAULTS = new CostSettings(ManaMode.FULL_COST, 50.0, true, 50.0,
             List.of(4.0, 5.0, 7.0, 10.0, 14.0, 18.0), true, 1.0, true, 0.75, true, 0.5, false, 1.0, ChannelCostMode.DRAIN, 0.0,
             0.5, true, SpellInfinityMode.REDUCE_COST, 20.0, 20.0,
             25.0, 0.15, 180, 480, 30, 50.0, true, true,
             20, 25.0, BacklashMode.PERCENT_MAX_HEALTH, 10.0, 50.0, 2.0, 10.0, 5.0,
-            180, 480, 90, true, 3.0, 0.0, 50.0, 0.0, 10.0, 3.0);
+            180, 480, 90, true, 3.0, 0.0, 50.0, 0.0, 10.0, 3.0, 5);
 
     public static final StreamCodec<FriendlyByteBuf, CostSettings> STREAM_CODEC = StreamCodec.of(CostSettings::write, CostSettings::read);
 
@@ -143,7 +144,8 @@ public record CostSettings(
                 RunelessServerConfig.KILL_CHANCE_PERCENT_PER_LEVEL.get(),
                 RunelessServerConfig.BOSS_HIT_BASE_CHANCE_PERCENT.get(),
                 RunelessServerConfig.BOSS_HIT_CHANCE_PERCENT_PER_LEVEL.get(),
-                RunelessServerConfig.BOSS_HIT_COOLDOWN_SECONDS.get());
+                RunelessServerConfig.BOSS_HIT_COOLDOWN_SECONDS.get(),
+                RunelessServerConfig.MAX_ORBS_PER_STACK.get());
     }
 
     /** Tier table lookup: higher tiers use the last value, negative tiers the first. */
@@ -205,6 +207,7 @@ public record CostSettings(
         buf.writeDouble(s.bossHitBaseChancePercent);
         buf.writeDouble(s.bossHitChancePercentPerLevel);
         buf.writeDouble(s.bossHitCooldownSeconds);
+        buf.writeVarInt(s.maxOrbsPerStack);
     }
 
     private static CostSettings read(FriendlyByteBuf buf) {
@@ -227,6 +230,7 @@ public record CostSettings(
                 buf.readVarInt(), buf.readDouble(), buf.readEnum(BacklashMode.class),
                 buf.readDouble(), buf.readDouble(), buf.readDouble(), buf.readDouble(), buf.readDouble(),
                 buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readBoolean(), buf.readDouble(),
-                buf.readDouble(), buf.readDouble(), buf.readDouble(), buf.readDouble(), buf.readDouble());
+                buf.readDouble(), buf.readDouble(), buf.readDouble(), buf.readDouble(), buf.readDouble(),
+                buf.readVarInt());
     }
 }

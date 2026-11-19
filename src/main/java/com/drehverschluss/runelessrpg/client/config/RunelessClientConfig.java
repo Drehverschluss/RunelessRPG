@@ -1,6 +1,7 @@
 package com.drehverschluss.runelessrpg.client.config;
 
 import com.drehverschluss.runelessrpg.RunelessRPG;
+import com.drehverschluss.runelessrpg.client.FullOrbEffect;
 import com.drehverschluss.runelessrpg.client.hud.HudAnchor;
 import com.drehverschluss.runelessrpg.client.hud.ManaBar;
 import com.drehverschluss.runelessrpg.client.hud.ManaBarStyle;
@@ -17,7 +18,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Client config ({@code config/runelessrpg-client.toml}): layout and look of the mana bar and the mana number. */
+/** Client config ({@code config/runelessrpg-client.toml}): layout and look of the mana bar and the mana number, mana orbs. */
 public final class RunelessClientConfig {
     private static final int MAX_OFFSET = 10000;
 
@@ -52,6 +53,8 @@ public final class RunelessClientConfig {
     public static final ModConfigSpec.IntValue TEXT_OFFSET_X;
     public static final ModConfigSpec.IntValue TEXT_OFFSET_Y;
     public static final ModConfigSpec.DoubleValue TEXT_SCALE;
+
+    public static final ModConfigSpec.EnumValue<FullOrbEffect> FULL_ORB_EFFECT;
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -136,6 +139,14 @@ public final class RunelessClientConfig {
                 .comment("Flash the bar when a spell fails for lack of mana (Spell Engine's message is shown either way)")
                 .define("flashOnInsufficientMana", true);
         FLASH_COLOR = builder.comment("Flash color (#RRGGBB)").define("flashColor", "#FF3030", RunelessClientConfig::isColor);
+        builder.pop();
+
+        builder.comment("Look of mana orbs on the ground").push("mana_orbs");
+        FULL_ORB_EFFECT = builder
+                .comment("Effect of full mana orbs (as many orbs merged as the server allows, maxOrbsPerStack):",
+                        "BOTH = golden sparkles and a slow pulse, SPARKLES = only the sparkles, PULSE = only the pulse, NONE = no effect.",
+                        "The sparkles follow the particle setting of the game (none at Minimal)")
+                .defineEnum("fullOrbEffect", FullOrbEffect.BOTH);
         builder.pop();
 
         SPEC = builder.build();

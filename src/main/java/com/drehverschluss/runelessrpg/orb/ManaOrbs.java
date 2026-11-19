@@ -105,7 +105,11 @@ public final class ManaOrbs {
 
     // ------------------------------------------------------------------ picking up
 
-    /** Called when a player touches an orb: gives the mana of one orb, at most one orb per player every 2 ticks. */
+    /**
+     * Called when a player touches an orb: gives the mana of the whole orb at once (count × orbManaPercent of the
+     * player's max mana, debt first, one {@link ManaChangeEvent}), at most one orb per player every 2 ticks. With full
+     * mana the orb is used up all the same.
+     */
     static boolean tryPickUp(ServerPlayer player, ManaOrb orb) {
         long now = player.level().getGameTime();
         Long next = NEXT_PICKUP.get(player.getUUID());
@@ -113,7 +117,7 @@ public final class ManaOrbs {
             return false;
         }
         NEXT_PICKUP.put(player.getUUID(), now + PICKUP_DELAY_TICKS);
-        double amount = ManaManager.getMaxMana(player) * RunelessServerConfig.ORB_MANA_PERCENT.get() / 100.0;
+        double amount = ManaManager.getMaxMana(player) * RunelessServerConfig.ORB_MANA_PERCENT.get() / 100.0 * orb.getCount();
         if (amount > 0.0) {
             ManaManager.restoreMana(player, amount, ManaChangeEvent.Reason.ORB);
         }
@@ -276,16 +280,35 @@ public final class ManaOrbs {
 
     // ------------------------------------------------------------------ helpers
 
-    /** Spawns {@code count} orbs as one entity, or adds them to an orb that is already there. */
+    /**
+     * Spawns {@code count} orbs: first fills non-full orbs that are already there, the rest as new entities of at most
+     * {@code maxOrbsPerStack} each (7 orbs with limit 5 = one orb of 5 and one of 2).
+     */
     public static void spawn(ServerLevel level, Vec3 pos, int count, boolean scatter) {
         if (count <= 0) {
             return;
         }
-        for (ManaOrb existing : level.getEntitiesOfClass(ManaOrb.class, AABB.ofSize(pos, 1.0, 1.0, 1.0), orb -> !orb.isRemoved())) {
-            existing.addCount(count);
-            return;
+        int max = maxOrbsPerStack();
+        int left = count;
+        for (ManaOrb existing : level.getEntitiesOfClass(ManaOrb.class, AABB.ofSize(pos, 1.0, 1.0, 1.0),
+                orb -> !orb.isRemoved() && orb.getCount() < max)) {
+            int moved = Math.min(left, max - existing.getCount());
+            existing.addCount(moved);
+            left -= moved;
+            if (left <= 0) {
+                return;
+            }
         }
-        level.addFreshEntity(new ManaOrb(level, pos, count, scatter));
+        while (left > 0) {
+            int size = Math.min(left, max);
+            level.addFreshEntity(new ManaOrb(level, pos, size, scatter));
+            left -= size;
+        }
+    }
+
+    /** Server limit {@code maxOrbsPerStack} (orbs that merge into one entity at most). */
+    public static int maxOrbsPerStack() {
+        return RunelessServerConfig.MAX_ORBS_PER_STACK.get();
     }
 
     /** Level of Mana Harvest (0 without the effect). */

@@ -16,10 +16,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.function.Consumer;
+
 /**
  * A mana orb ({@code runelessrpg:mana_orb}). Moves like a vanilla experience orb (gravity, floats up in water, bounces
- * in lava) but never flies to players. Nearby orbs merge into one with a higher {@link #getCount() count}; a touching
- * player takes one orb after the other ({@link ManaOrbs#tryPickUp}).
+ * in lava) but never flies to players. Nearby orbs merge into one with a higher {@link #getCount() count}, at most
+ * {@code maxOrbsPerStack}; a touching player takes the whole orb at once ({@link ManaOrbs#tryPickUp}).
  * <p>
  * Orbs cannot be destroyed by damage (explosions, fire, lava, attacks); they disappear after
  * {@code orbLifetimeSeconds}, below the world or when mana orbs are turned off.
@@ -28,7 +30,14 @@ public class ManaOrb extends Entity {
     private static final EntityDataAccessor<Integer> DATA_COUNT = SynchedEntityData.defineId(ManaOrb.class, EntityDataSerializers.INT);
     private static final double MERGE_DISTANCE = 0.5;
 
+    /** Client-side tick of the full-orb effect (set by the client entry point, so this class loads no client code). */
+    private static Consumer<ManaOrb> clientTicker = orb -> {};
+
     private int age;
+
+    public static void setClientTicker(Consumer<ManaOrb> ticker) {
+        clientTicker = ticker;
+    }
 
     public ManaOrb(EntityType<? extends ManaOrb> type, Level level) {
         super(type, level);
@@ -59,6 +68,7 @@ public class ManaOrb extends Entity {
         entityData.set(DATA_COUNT, Math.max(1, count));
     }
 
+    /** Adds new orbs (age 0), the caller keeps the count within {@code maxOrbsPerStack}. */
     void addCount(int count) {
         setCount(getCount() + count);
         age = 0;
@@ -93,7 +103,9 @@ public class ManaOrb extends Entity {
         if (!level().noCollision(getBoundingBox())) {
             moveTowardsClosestSpace(getX(), (getBoundingBox().minY + getBoundingBox().maxY) / 2.0, getZ());
         }
-        if (!level().isClientSide) {
+        if (level().isClientSide) {
+            clientTicker.accept(this);
+        } else {
             if (!RunelessServerConfig.MANA_ORBS_ENABLED.get()) {
                 discard();
                 return;
@@ -123,28 +135,45 @@ public class ManaOrb extends Entity {
         return getOnPos(0.999999F);
     }
 
-    // All orbs are worth the same, so any orb within the merge distance joins (no vanilla merge groups): fewer entities
+    /**
+     * All orbs are worth the same, so any orb within the merge distance can join (no vanilla merge groups), up to
+     * {@code maxOrbsPerStack}: this orb takes orbs from non-full neighbours until it is full, a neighbour that gives only
+     * part of its count stays with the rest. Full orbs (also bigger ones after the limit was lowered) take nothing more.
+     * The receiving orb keeps the younger age (like vanilla experience orbs).
+     */
     private void mergeNearby() {
+        int max = ManaOrbs.maxOrbsPerStack();
+        if (getCount() >= max) {
+            return;
+        }
         for (ManaOrb other : level().getEntitiesOfClass(ManaOrb.class, getBoundingBox().inflate(MERGE_DISTANCE),
-                orb -> orb != this && !orb.isRemoved())) {
-            if (isRemoved()) {
+                orb -> orb != this && !orb.isRemoved() && orb.getCount() < max)) {
+            int room = max - getCount();
+            if (room <= 0 || isRemoved()) {
                 return;
             }
-            setCount(getCount() + other.getCount());
+            int moved = Math.min(room, other.getCount());
+            setCount(getCount() + moved);
             age = Math.min(age, other.age);
-            other.discard();
+            if (moved >= other.getCount()) {
+                other.discard();
+            } else {
+                other.setCount(other.getCount() - moved);
+            }
         }
+    }
+
+    /** True if the orb holds as many orbs as may merge (or more, after the limit was lowered) and merging is on (limit ≥ 2). */
+    public static boolean isFull(int count, int maxOrbsPerStack) {
+        return maxOrbsPerStack >= 2 && count >= maxOrbsPerStack;
     }
 
     @Override
     public void playerTouch(Player player) {
-        if (!level().isClientSide && player instanceof ServerPlayer serverPlayer && ManaOrbs.tryPickUp(serverPlayer, this)) {
-            int left = getCount() - 1;
-            if (left <= 0) {
-                discard();
-            } else {
-                setCount(left);
-            }
+        // The first player in the server tick takes the whole orb; it is removed before the next player touches it
+        if (!level().isClientSide && !isRemoved() && player instanceof ServerPlayer serverPlayer
+                && ManaOrbs.tryPickUp(serverPlayer, this)) {
+            discard();
         }
     }
 
