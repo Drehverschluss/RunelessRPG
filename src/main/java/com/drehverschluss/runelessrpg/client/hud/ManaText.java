@@ -3,6 +3,7 @@ package com.drehverschluss.runelessrpg.client.hud;
 import com.drehverschluss.runelessrpg.client.ClientManaState;
 import com.drehverschluss.runelessrpg.client.config.RunelessClientConfig;
 import com.drehverschluss.runelessrpg.util.CostFormat;
+import com.drehverschluss.runelessrpg.util.DisplayUnit;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -118,10 +119,14 @@ public final class ManaText {
         return (n / 1000) + "k";
     }
 
+    /** Text of the number; mana amounts in the display unit ({@link DisplayUnit}), the percentage unchanged. */
     static String text(TextMode mode, double mana, double max) {
+        double factor = DisplayUnit.factor();
+        double shownMana = mana * factor;
+        double shownMax = max * factor;
         return switch (mode) {
-            case CURRENT -> shortNumber(mana);
-            case CURRENT_MAX -> shortNumber(mana) + " / " + (max < 1000 ? CostFormat.format(max) : shortNumber(max));
+            case CURRENT -> shortNumber(shownMana);
+            case CURRENT_MAX -> shortNumber(shownMana) + " / " + (shownMax < 1000 ? CostFormat.format(shownMax) : shortNumber(shownMax));
             case PERCENT -> Math.round(mana / max * 100.0) + "%";
             default -> "";
         };

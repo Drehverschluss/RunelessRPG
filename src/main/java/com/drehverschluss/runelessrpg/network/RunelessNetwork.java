@@ -6,7 +6,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public final class RunelessNetwork {
-    private static final String PROTOCOL_VERSION = "10";
+    private static final String PROTOCOL_VERSION = "11";
 
     private RunelessNetwork() {}
 
@@ -24,6 +24,6 @@ public final class RunelessNetwork {
         registrar.playToClient(SpellCostOverridesPayload.TYPE, SpellCostOverridesPayload.STREAM_CODEC,
                 (payload, context) -> ClientPayloadHandler.handleSpellCosts(payload));
         registrar.playToClient(ManaInsufficientPayload.TYPE, ManaInsufficientPayload.STREAM_CODEC,
-                (payload, context) -> ClientPayloadHandler.handleManaInsufficient());
+                (payload, context) -> ClientPayloadHandler.handleManaInsufficient(payload));
     }
 }

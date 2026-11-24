@@ -6,6 +6,7 @@ import com.drehverschluss.runelessrpg.cost.CostSettings;
 import com.drehverschluss.runelessrpg.cost.ManaCosts;
 import com.drehverschluss.runelessrpg.cost.SpellCostInfo;
 import com.drehverschluss.runelessrpg.util.CostFormat;
+import com.drehverschluss.runelessrpg.util.DisplayUnit;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
@@ -56,11 +57,13 @@ public final class ManaTooltip {
         boolean affordable = ManaCosts.canPay(player, holder, info, CastContext.Stage.START);
         MutableComponent text;
         Spell spell = holder.value();
+        double factor = DisplayUnit.factor(); // amounts in the display unit
         if (info.channeled() && CostSettings.client().channelCostMode() == ChannelCostMode.DRAIN && spell.active.cast.duration > 0.0F) {
             double perSecond = total / spell.active.cast.duration;
-            text = Component.translatable("spell.tooltip.runelessrpg.mana.channel", CostFormat.format(total), CostFormat.format(perSecond));
+            text = Component.translatable("spell.tooltip.runelessrpg.mana.channel", CostFormat.format(total * factor),
+                    CostFormat.format(perSecond * factor));
         } else {
-            text = Component.translatable("spell.tooltip.runelessrpg.mana", CostFormat.format(total));
+            text = Component.translatable("spell.tooltip.runelessrpg.mana", CostFormat.format(total * factor));
         }
         String indent = indentLevel > 0 ? " ".repeat(indentLevel) : "";
         lines.add(Component.literal(indent).append(text).withStyle(affordable ? ChatFormatting.GREEN : ChatFormatting.RED));

@@ -4,7 +4,6 @@ import com.drehverschluss.runelessrpg.RunelessRPG;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attribute;
-import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.PercentageAttribute;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
@@ -18,7 +17,7 @@ public final class RunelessAttributes {
     private static final DeferredRegister<Attribute> ATTRIBUTES = DeferredRegister.create(Registries.ATTRIBUTE, RunelessRPG.MODID);
 
     public static final DeferredHolder<Attribute, Attribute> MAX_MANA = ATTRIBUTES.register("max_mana",
-            () -> new RangedAttribute(key("max_mana"), 20.0, 0.0, 100000.0)
+            () -> new ManaAmountAttribute(key("max_mana"), 20.0, 0.0, 100000.0)
                     .setSyncable(true).setSentiment(Attribute.Sentiment.POSITIVE));
     public static final DeferredHolder<Attribute, Attribute> MANA_REGEN = ATTRIBUTES.register("mana_regen",
             () -> new PerSecondAttribute(key("mana_regen"), 0.5, -1000.0, 1000.0)

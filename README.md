@@ -176,6 +176,9 @@ KubeJS: [Wiki → API and events](https://github.com/Drehverschluss/RunelessRPG/
 - **Boss mods**: bosses in `#c:bosses` (Cataclysm, Bosses of Mass Destruction, Mowzie's Mobs, vanilla) use the boss
   rules for mana orbs automatically; others can be added to `#runelessrpg:mana_orb_bosses`.
 - **Just Enough Effect Descriptions (JEED)** shows short descriptions of all five effects.
+- **Other mana systems**: since 0.4.0 an experimental API lets another mod share one mana pool with RunelessRPG
+  (replaceable storage, debt account, cost helpers, Spell Mana Leech for its spells, display unit), see
+  [Wiki → API and events](https://github.com/Drehverschluss/RunelessRPG/wiki/API-and-Events#other-mana-systems).
 
 ## Project layout
 

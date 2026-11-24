@@ -39,6 +39,7 @@ public final class ManaCastCheck {
             if (ManaCosts.canPay(player, holder, info, stage)) {
                 return pass;
             }
+            ManaShortfall.record(player, ManaCosts.shortfall(player, holder, info, stage));
             if (stage == Stage.CHANNEL_TICK && player instanceof ServerPlayer serverPlayer) {
                 ManaCastHandler.requestChannelEnd(serverPlayer, holder);
             }

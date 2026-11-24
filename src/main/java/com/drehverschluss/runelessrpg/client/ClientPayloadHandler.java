@@ -5,6 +5,7 @@ import com.drehverschluss.runelessrpg.cost.CostSettings;
 import com.drehverschluss.runelessrpg.cost.SpellCostOverrides;
 import com.drehverschluss.runelessrpg.mana.ManaAttachments;
 import com.drehverschluss.runelessrpg.network.CostSettingsPayload;
+import com.drehverschluss.runelessrpg.network.ManaInsufficientPayload;
 import com.drehverschluss.runelessrpg.network.ManaSyncPayload;
 import com.drehverschluss.runelessrpg.network.SpellCostOverridesPayload;
 import net.minecraft.client.Minecraft;
@@ -14,7 +15,7 @@ public final class ClientPayloadHandler {
     private ClientPayloadHandler() {}
 
     public static void handleManaSync(ManaSyncPayload payload) {
-        ClientManaState.setMana(payload.mana());
+        ClientManaState.set(payload.mana(), payload.maxMana());
         if (payload.notable()) {
             ManaTextFade.ping();
         }
@@ -32,7 +33,7 @@ public final class ClientPayloadHandler {
         SpellCostOverrides.setClientValues(payload.costs());
     }
 
-    public static void handleManaInsufficient() {
-        ManaFeedback.onServerInsufficientMana();
+    public static void handleManaInsufficient(ManaInsufficientPayload payload) {
+        ManaFeedback.onServerInsufficientMana(payload.missing(), payload.message());
     }
 }

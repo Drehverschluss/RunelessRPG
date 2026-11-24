@@ -11,11 +11,13 @@ import net.minecraft.resources.ResourceLocation;
  * Server → client: current mana of the receiving player. {@code notable} = a change the player should see (spell cost
  * except DRAIN channel ticks, potion, leech, command, respawn, max mana); false for regeneration, DRAIN ticks and plain
  * resyncs. The client shows the number for {@code textVisibility = ON_CHANGE} only on notable changes.
+ * {@code maxMana} = the maximum of another mod's storage, NaN with the built-in storage (the client uses the attribute).
  */
-public record ManaSyncPayload(double mana, boolean notable) implements CustomPacketPayload {
+public record ManaSyncPayload(double mana, boolean notable, double maxMana) implements CustomPacketPayload {
     public static final Type<ManaSyncPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(RunelessRPG.MODID, "mana_sync"));
     public static final StreamCodec<ByteBuf, ManaSyncPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.DOUBLE, ManaSyncPayload::mana, ByteBufCodecs.BOOL, ManaSyncPayload::notable, ManaSyncPayload::new);
+            ByteBufCodecs.DOUBLE, ManaSyncPayload::mana, ByteBufCodecs.BOOL, ManaSyncPayload::notable,
+            ByteBufCodecs.DOUBLE, ManaSyncPayload::maxMana, ManaSyncPayload::new);
 
     @Override
     public Type<? extends CustomPacketPayload> type() {

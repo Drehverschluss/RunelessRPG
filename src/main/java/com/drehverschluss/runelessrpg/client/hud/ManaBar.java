@@ -449,7 +449,12 @@ public final class ManaBar {
         ManaText.INSTANCE.render(graphics, mana, max, true);
     }
 
+    /** Max mana of the local player: the maximum of another mod's storage if the server sent one, else the attribute. */
     public static double maxMana(LocalPlayer player) {
+        double storageMax = ClientManaState.getStorageMax();
+        if (!Double.isNaN(storageMax)) {
+            return storageMax;
+        }
         return player.getAttributes().hasAttribute(RunelessAttributes.MAX_MANA) ? player.getAttributeValue(RunelessAttributes.MAX_MANA) : 0.0;
     }
 

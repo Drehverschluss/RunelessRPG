@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.0
+
+### API for other mana systems
+
+- New experimental API so that another mana system (through a compatibility mod) can share one mana pool with RunelessRPG. Without such a mod nothing changes in the game: same values, same display, same configs and defaults.
+- Replaceable mana storage (`ManaStorage`, `RunelessApi.setStorage` / `resetStorage`): another mod can keep the mana pool, RunelessRPG reads and writes it through the storage. Switching at runtime keeps the mana and the debt of every online player.
+- Debt account for storages that cannot go below 0: `DEBT`, `DEBT_LIMIT` and Borrowed Power keep working, everything that comes into the pool pays the debt first, death clears it, logout keeps it.
+- Changes made by the other mana system are reported with the new reason `EXTERNAL` in `ManaChangeEvent` and sent to the client like regeneration. With another storage the client also gets its maximum (bar, spell cast check, tooltip color).
+- Helpers for other mods' spells: `getCostMultiplier` (Mana Cost with its floor and Spell Infinity, without Overcharge), `canAfford`, `getMissingMana` and `spend` with or without debt (same mana mode rules as Spell Engine spells), `giveMana` and `takeMana`.
+- `getManaBonus`: modifiers on max mana and mana regeneration by operation, without the base value, optionally without the modifiers of given namespaces.
+- `registerSpellHitPredicate`: other mods can mark direct hits of their spells, so Spell Mana Leech works for them with all its rules (fewer mana for further targets with the same counter as Spell Engine hits, cap at the target's health, `#runelessrpg:no_mana_leech`). Such hits never count for weapon Mana Leech.
+- Display factor on the client (`setDisplayFactor`, default 1): the number at the bar, its hover tooltip, the mana line of spell tooltips and flat Max Mana and Mana Regeneration values in attribute tooltips can be shown in another unit. Percent values, potion texts and commands stay in RunelessRPG mana.
+- New client event `ManaInsufficientEvent` with the missing amount, fired whenever the bar flashes for lack of mana, and `signalInsufficientMana` for other mods.
+- Network protocol 11: client and server both need 0.4.0.
+
 ## 0.3.0
 
 ### Mana orbs

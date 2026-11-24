@@ -45,17 +45,22 @@ public final class ManaEvents {
 
     // Equipment modifiers (e.g. max mana on armor) are not saved; Minecraft applies them again on the player's first tick.
     // So login and respawn never clamp or refill right away: onPlayerTick does it after the equipment update.
+    // Another mod's storage that handles the lifecycle itself: no first fill, no refill, no clamp (base values still apply).
     private static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             applyBaseValues(player);
-            ManaManager.initializeIfMissing(player);
+            if (!ManaManager.isForeignStorage()) {
+                ManaManager.initializeIfMissing(player);
+            }
+            ManaManager.foldDebt(player);
             ManaManager.sync(player);
         }
     }
 
     // Keep the pre-death value on the new player so the respawn refill reports a correct old value.
+    // The debt account is not copied: death clears it.
     private static void onClone(PlayerEvent.Clone event) {
-        if (event.isWasDeath() && event.getEntity() instanceof ServerPlayer player) {
+        if (event.isWasDeath() && event.getEntity() instanceof ServerPlayer player && !ManaManager.isForeignStorage()) {
             player.setData(ManaAttachments.MANA, ManaManager.getMana(event.getOriginal()));
         }
     }
@@ -63,7 +68,7 @@ public final class ManaEvents {
     private static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             applyBaseValues(player);
-            if (!event.isEndConquered()) {
+            if (!event.isEndConquered() && !ManaManager.storageHandlesLifecycle()) {
                 player.getData(ManaAttachments.SYNC_STATE).refillPending = true;
             }
             ManaManager.sync(player);
@@ -80,6 +85,7 @@ public final class ManaEvents {
 
     private static void onPlayerTick(PlayerTickEvent.Post event) {
         if (event.getEntity() instanceof ServerPlayer player && player.isAlive()) {
+            ManaManager.tickStorage(player);
             ManaAttachments.ManaSyncState state = player.getData(ManaAttachments.SYNC_STATE);
             if (state.refillPending) {
                 state.refillPending = false;

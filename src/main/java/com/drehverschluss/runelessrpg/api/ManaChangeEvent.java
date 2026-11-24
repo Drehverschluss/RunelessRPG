@@ -9,7 +9,8 @@ import net.neoforged.bus.api.Event;
  * <p>
  * Changes caused by regeneration are reported in the same steps in which they are sent to the client
  * (at least {@code 0.05} mana, or when the pool becomes full or empty), not every tick. For those events
- * {@link #getOldMana()} is the value of the previous report.
+ * {@link #getOldMana()} is the value of the previous report. The same applies to {@link Reason#EXTERNAL} changes that
+ * RunelessRPG finds in another mod's {@link ManaStorage}.
  */
 public class ManaChangeEvent extends Event {
     /** Why the mana of a player changed. */
@@ -45,7 +46,14 @@ public class ManaChangeEvent extends Event {
          * Mana orb ({@code runelessrpg:mana_orb}) picked up, since 0.3.0. Never above max mana; pays back debt. Not
          * affected by Mana Sickness.
          */
-        ORB
+        ORB,
+        /**
+         * A change through the mana system of another mod, e.g. through a compatibility mod or another mod's
+         * {@link ManaStorage} (its own regeneration or potions, reported in the same steps as {@link #REGEN}), since 0.4.0.
+         *
+         * @apiNote Experimental: may still change in later versions.
+         */
+        EXTERNAL
     }
 
     private final Player player;

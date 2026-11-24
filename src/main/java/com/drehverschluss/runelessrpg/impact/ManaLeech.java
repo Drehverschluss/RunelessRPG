@@ -31,7 +31,8 @@ import java.util.UUID;
  * the part the target's absorption hearts took.
  * <p>
  * Spell Engine hits are recognized by the {@link SpellHitContext} set around {@code Entity.hurt} in
- * {@code performImpact} (the damage events fire synchronously inside it).
+ * {@code performImpact} (the damage events fire synchronously inside it). Direct hits of other mods' spells are
+ * recognized by their registered {@link ForeignSpellHits predicates}, only outside Spell Engine hits.
  */
 public final class ManaLeech {
     /** Damage types that count for weapon mana leech. */
@@ -95,11 +96,13 @@ public final class ManaLeech {
             damage = Math.min(damage, Math.max(0.0F, healthBefore));
         }
         SpellHitContext.Hit hit = SpellHitContext.currentHit();
-        if (isWeaponHit(source, hit, player)) {
+        // Another mod's spell (registered predicates, only outside Spell Engine hits): spell leech, never weapon leech
+        boolean foreignSpellHit = hit == null && ForeignSpellHits.isDirect(source, target, player);
+        if (!foreignSpellHit && isWeaponHit(source, hit, player)) {
             double amount = leechAmount(player, damage, player.getAttributeValue(RunelessAttributes.MANA_LEECH),
                     WEAPON_HITS, RunelessServerConfig.MANA_LEECH_EXTRA_TARGET_PERCENT.get());
             restore(player, limitPerSecond(player, amount), ManaChangeEvent.Reason.LEECH);
-        } else if (isDirectSpellHit(source, hit, player)) {
+        } else if (foreignSpellHit || isDirectSpellHit(source, hit, player)) {
             double amount = leechAmount(player, damage, player.getAttributeValue(RunelessAttributes.SPELL_MANA_LEECH),
                     SPELL_HITS, RunelessServerConfig.SPELL_MANA_LEECH_EXTRA_TARGET_PERCENT.get());
             restore(player, amount, ManaChangeEvent.Reason.SPELL_LEECH);

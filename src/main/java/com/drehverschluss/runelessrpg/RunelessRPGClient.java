@@ -1,5 +1,6 @@
 package com.drehverschluss.runelessrpg;
 
+import com.drehverschluss.runelessrpg.client.ClientManaState;
 import com.drehverschluss.runelessrpg.client.ManaOrbRenderer;
 import com.drehverschluss.runelessrpg.client.ManaOrbSparkle;
 import com.drehverschluss.runelessrpg.orb.ManaOrb;
@@ -23,6 +24,7 @@ import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.config.ModConfigEvent;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
@@ -53,6 +55,7 @@ public class RunelessRPGClient {
         NeoForge.EVENT_BUS.addListener(RunelessRPGClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(ManaHudTooltip::onScreenRender);
         NeoForge.EVENT_BUS.addListener(PotionTooltip::onItemTooltip);
+        NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, event -> ClientManaState.reset());
     }
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {

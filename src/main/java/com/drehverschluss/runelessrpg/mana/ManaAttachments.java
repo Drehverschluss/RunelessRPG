@@ -18,6 +18,13 @@ public final class ManaAttachments {
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<Double>> MANA = ATTACHMENTS.register("mana",
             () -> AttachmentType.builder(() -> Double.NaN).serialize(Codec.DOUBLE, value -> !Double.isNaN(value)).build());
 
+    /**
+     * Debt account for a storage of another mod that cannot go below 0 (positive amount of RunelessRPG mana). Saved with
+     * the player (logout keeps it), not copied on death (death clears it). Never used with the built-in storage.
+     */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<Double>> DEBT = ATTACHMENTS.register("mana_debt",
+            () -> AttachmentType.builder(() -> 0.0).serialize(Codec.DOUBLE, value -> value > 0.0).build());
+
     /** Runtime-only bookkeeping (sync, pending respawn refill), never saved. */
     public static final Supplier<AttachmentType<ManaSyncState>> SYNC_STATE = ATTACHMENTS.register("mana_sync_state",
             () -> AttachmentType.builder(ManaSyncState::new).build());
@@ -48,5 +55,9 @@ public final class ManaAttachments {
         public double lastSynced = Double.NaN;
         /** Respawned: refill to max mana on the first tick, once equipment modifiers are applied again. */
         public boolean refillPending;
+        /** Max mana last sent to the client (NaN = built-in storage, the client uses the attribute). */
+        public double lastSyncedMax = Double.NaN;
+        /** Another mod's storage: mana after RunelessRPG's last write or check (NaN = not checked yet). */
+        public double lastKnown = Double.NaN;
     }
 }

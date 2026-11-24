@@ -3,6 +3,7 @@ package com.drehverschluss.runelessrpg.client.hud;
 import com.drehverschluss.runelessrpg.attribute.RunelessAttributes;
 import com.drehverschluss.runelessrpg.client.ClientManaState;
 import com.drehverschluss.runelessrpg.util.CostFormat;
+import com.drehverschluss.runelessrpg.util.DisplayUnit;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
@@ -59,9 +60,11 @@ public final class ManaHudTooltip {
         double max = ManaBar.maxMana(player);
         double regen = player.getAttributes().hasAttribute(RunelessAttributes.MANA_REGEN)
                 ? player.getAttributeValue(RunelessAttributes.MANA_REGEN) : 0.0;
-        String rate = (regen >= 0 ? "+" : "") + CostFormat.format(regen);
+        // Mana amounts in the display unit
+        double factor = DisplayUnit.factor();
+        String rate = (regen >= 0 ? "+" : "") + CostFormat.format(regen * factor);
         return List.of(
-                Component.translatable("runelessrpg.hud.tooltip.mana", String.valueOf(Mth.floor(mana)), CostFormat.format(max)),
+                Component.translatable("runelessrpg.hud.tooltip.mana", String.valueOf(Mth.floor(mana * factor)), CostFormat.format(max * factor)),
                 Component.translatable("runelessrpg.hud.tooltip.regen", rate).withStyle(ChatFormatting.GRAY));
     }
 }

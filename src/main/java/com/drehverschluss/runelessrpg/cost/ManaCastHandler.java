@@ -129,6 +129,7 @@ public final class ManaCastHandler {
         START_PAID.remove(player.getUUID());
         PENDING_END.remove(player.getUUID());
         LAST_NOTIFY.remove(player.getUUID());
+        ManaShortfall.forget(player);
     }
 
     /**
@@ -142,7 +143,12 @@ public final class ManaCastHandler {
             return;
         }
         LAST_NOTIFY.put(player.getUUID(), now);
-        PacketDistributor.sendToPlayer(player, ManaInsufficientPayload.INSTANCE);
+        PacketDistributor.sendToPlayer(player, new ManaInsufficientPayload(ManaShortfall.server(player), true));
+    }
+
+    /** Another mod reports "not enough mana" (flash and client event, no Spell Engine message, not throttled). */
+    public static void signalInsufficientMana(ServerPlayer player, double missing) {
+        PacketDistributor.sendToPlayer(player, new ManaInsufficientPayload(Math.max(0.0, missing), false));
     }
 
     private static void spend(ServerPlayer player, double amount, CostSettings settings) {

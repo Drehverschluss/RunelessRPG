@@ -142,6 +142,11 @@ public final class ManaCosts {
 
     /** Effective {@code mana_cost} factor including its lower limit (and Spell Infinity on the held item). */
     public static double manaCostFactor(Player player, Holder<Spell> holder) {
+        return manaCostFactor(player);
+    }
+
+    /** Effective {@code mana_cost} factor including its lower limit (and Spell Infinity on the held item); same for every spell. */
+    public static double manaCostFactor(Player player) {
         CostSettings settings = CostSettings.forSide(player.level().isClientSide());
         double floorPercent = settings.minManaCostPercent();
         double manaCost = player.getAttributeValue(RunelessAttributes.MANA_COST);
@@ -230,6 +235,77 @@ public final class ManaCosts {
             case START -> stage != Stage.START || affordable(player, settings, mana, total, total);
             case END -> affordable(player, settings, mana, total, total);
         };
+    }
+
+    /**
+     * How much mana the given step of a cast is missing (same steps and rules as {@link #canPay}); 0 if it is affordable.
+     */
+    public static double shortfall(Player player, Holder<Spell> holder, SpellCostInfo info, Stage stage) {
+        if (!info.costsMana() || isCreativeFree(player)) {
+            return 0.0;
+        }
+        CostSettings settings = CostSettings.forSide(player.level().isClientSide());
+        double total = cost(player, holder, info);
+        if (total <= 0.0) {
+            return 0.0;
+        }
+        double mana = ManaManager.getMana(player);
+        if (!info.channeled()) {
+            return shortfall(player, settings, mana, total, total);
+        }
+        double perTick = costPerChannelTick(player, holder, total);
+        return switch (settings.channelCostMode()) {
+            case DRAIN -> switch (stage) {
+                case START -> shortfall(player, settings, mana, total * settings.channelStartPercent() / 100.0 + perTick, total);
+                case CHANNEL_TICK -> shortfall(player, settings, mana, perTick, total);
+                default -> 0.0;
+            };
+            case START -> stage != Stage.START ? 0.0 : shortfall(player, settings, mana, total, total);
+            case END -> shortfall(player, settings, mana, total, total);
+        };
+    }
+
+    /**
+     * Missing mana for {@link #affordable}: amount − (mana + allowed debt), at least 0. In the DEBT mode a cast needs
+     * mana above 0, so it is at most the current debt.
+     */
+    public static double shortfall(Player player, CostSettings settings, double mana, double amount, double reference) {
+        if (affordable(player, settings, mana, amount, reference)) {
+            return 0.0;
+        }
+        double missing = amount - mana - debtLimit(player, settings, reference);
+        if (settings.manaMode() == ManaMode.DEBT) {
+            missing = Math.min(missing, -mana);
+        }
+        return Math.max(0.0, missing);
+    }
+
+    /**
+     * Whether a player can pay {@code amount} for another mod's spell. With {@code allowDebt} the same rules as Spell
+     * Engine spells apply ({@code manaMode}, {@code maxDebtPercent} of the amount, Borrowed Power); without it the full
+     * amount is needed. Creative players with {@code creativeFreeCasting} can always pay.
+     */
+    public static boolean canAffordExternal(Player player, double amount, boolean allowDebt) {
+        if (amount <= 0.0 || isCreativeFree(player)) {
+            return true;
+        }
+        double mana = ManaManager.getMana(player);
+        if (allowDebt) {
+            return affordable(player, CostSettings.forSide(player.level().isClientSide()), mana, amount, amount);
+        }
+        return mana + EPSILON >= amount;
+    }
+
+    /** Missing mana for {@link #canAffordExternal}; 0 if affordable. */
+    public static double shortfallExternal(Player player, double amount, boolean allowDebt) {
+        if (amount <= 0.0 || isCreativeFree(player)) {
+            return 0.0;
+        }
+        double mana = ManaManager.getMana(player);
+        if (allowDebt) {
+            return shortfall(player, CostSettings.forSide(player.level().isClientSide()), mana, amount, amount);
+        }
+        return mana + EPSILON >= amount ? 0.0 : amount - mana;
     }
 
     /**
