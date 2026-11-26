@@ -1,19 +1,23 @@
 package com.drehverschluss.runelessrpg.api;
 
 import com.drehverschluss.runelessrpg.attribute.RunelessAttributes;
+import com.drehverschluss.runelessrpg.config.RunelessServerConfig;
 import com.drehverschluss.runelessrpg.cost.CostSettings;
 import com.drehverschluss.runelessrpg.cost.ManaCastHandler;
 import com.drehverschluss.runelessrpg.cost.ManaCosts;
 import com.drehverschluss.runelessrpg.cost.SpellCostInfo;
 import com.drehverschluss.runelessrpg.impact.ForeignSpellHits;
+import com.drehverschluss.runelessrpg.impact.Overcharge;
 import com.drehverschluss.runelessrpg.mana.ManaManager;
 import com.drehverschluss.runelessrpg.util.DisplayUnit;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.spell_engine.api.spell.Spell;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -28,7 +32,8 @@ import java.util.Set;
  * {@code 0 … max_mana}, synchronized to the client and reported with a {@link ManaChangeEvent}
  * ({@link ManaChangeEvent.Reason#API}).
  * <p>
- * The section "Other mana systems" at the end (since 0.4.0) is experimental and may still change in later versions.
+ * The sections "Other mana systems" (since 0.4.0) and "Overcharge for other mods' spells" (since 0.4.1) at the end
+ * are experimental and may still change in later versions.
  */
 public final class RunelessApi {
     private RunelessApi() {}
@@ -173,8 +178,8 @@ public final class RunelessApi {
 
     /**
      * Cost multiplier for another mod's spell: {@code max(lower limit, runelessrpg:mana_cost)}, where Spell Infinity on
-     * the main hand item lowers the limit and the cost like for Spell Engine spells. Overcharge is not included. Same
-     * value on client and server.
+     * the main hand item lowers the limit and the cost like for Spell Engine spells. Overcharge is not included (see
+     * {@link #getCostMultiplierWithOvercharge}). Same value on client and server.
      *
      * @apiNote Experimental: may still change in later versions.
      */
@@ -331,5 +336,110 @@ public final class RunelessApi {
     @ApiStatus.Experimental
     public static double getDisplayFactor() {
         return DisplayUnit.factor();
+    }
+
+    // ================================================== overcharge for other mods' spells (experimental, since 0.4.1)
+
+    /**
+     * Overcharge cost factor of the player for another mod's spell: {@code 1 + runelessrpg:overcharge}, the same factor
+     * Spell Engine spells pay. Use it together with {@link #getCostMultiplier} (or use
+     * {@link #getCostMultiplierWithOvercharge}); overcharge comes after the lower limit of {@code mana_cost}. Client and
+     * server. Creative players get the regular value here; whether they pay is up to {@link #spend}.
+     *
+     * @return the factor, {@code 1.0} = no overcharge
+     * @apiNote Experimental: may still change in later versions.
+     */
+    @ApiStatus.Experimental
+    public static double getOverchargeCostFactor(Player player) {
+        return ManaCosts.overchargeCostFactor(player);
+    }
+
+    /**
+     * Full cost multiplier for another mod's spell, calculated like a Spell Engine spell:
+     * {@code max(lower limit, mana_cost)} with Spell Infinity ({@link #getCostMultiplier}) {@code × (1 + overcharge)}
+     * ({@link #getOverchargeCostFactor}). Example: a spell of 4 mana with {@code mana_cost} 0.3 and overcharge 0.2 costs
+     * {@code 4 × 0.5 × 1.2 = 2.4} with the default lower limit of 50 %. Client and server.
+     *
+     * @apiNote Experimental: may still change in later versions.
+     */
+    @ApiStatus.Experimental
+    public static double getCostMultiplierWithOvercharge(Player player) {
+        return ManaCosts.manaCostFactor(player) * ManaCosts.overchargeCostFactor(player);
+    }
+
+    /**
+     * Damage / healing multiplier from {@code runelessrpg:overcharge} for another mod's spell cast by this player right
+     * now: {@code 1 + overcharge × overchargeDamageFactor}. Unlike {@link #getOverchargeBonus(Player, Holder)} it does not
+     * check a Spell Engine spell: the caller decides that the spell was paid with mana and applies it to healing only if
+     * {@link #overchargeAffectsHealing} is on. Creative players get the bonus as well. Client (e.g. for tooltips) and
+     * server.
+     *
+     * @return the multiplier, {@code 1.0} = no bonus
+     * @apiNote Experimental: may still change in later versions.
+     */
+    @ApiStatus.Experimental
+    public static double getOverchargeBonus(Player player) {
+        return ManaCosts.overchargeBonus(player);
+    }
+
+    /**
+     * @param level any level of the side asking (decides between the server config and the client's copy of it)
+     * @return {@code overchargeDamageFactor} from the server config (on the client the value the server sent)
+     * @apiNote Experimental: may still change in later versions.
+     */
+    @ApiStatus.Experimental
+    public static double getOverchargeDamageFactor(Level level) {
+        return CostSettings.forSide(level.isClientSide()).overchargeDamageFactor();
+    }
+
+    /**
+     * @param level any level of the side asking (decides between the server config and the client's copy of it)
+     * @return {@code overchargeAffectsHealing} from the server config (on the client the value the server sent)
+     * @apiNote Experimental: may still change in later versions.
+     */
+    @ApiStatus.Experimental
+    public static boolean overchargeAffectsHealing(Level level) {
+        return CostSettings.forSide(level.isClientSide()).overchargeAffectsHealing();
+    }
+
+    /**
+     * {@code overchargeAffectsSummons} from the server config: whether summons and lingering zones use their overcharge
+     * snapshot ({@link #getOverchargeSnapshot}). Server only: the client does not receive this setting; on a client
+     * connected to another server this returns the default {@code true}.
+     *
+     * @apiNote Experimental: may still change in later versions.
+     */
+    @ApiStatus.Experimental
+    public static boolean overchargeAffectsSummons() {
+        return !RunelessServerConfig.SPEC.isLoaded() || RunelessServerConfig.OVERCHARGE_AFFECTS_SUMMONS.get();
+    }
+
+    /**
+     * The overcharge snapshot of a summon, zone or other spell-created entity: the damage / healing multiplier
+     * ({@code 1.0} = no bonus) it was created with, as RunelessRPG stores it for Spell Engine summons and spell clouds.
+     * Saved with the entity, not sent to clients, so server only (always empty on the client). The value is returned
+     * as stored; whether to use it is up to {@link #overchargeAffectsSummons}.
+     *
+     * @return the stored multiplier, or empty if the entity has no snapshot
+     * @apiNote Experimental: may still change in later versions.
+     */
+    @ApiStatus.Experimental
+    public static OptionalDouble getOverchargeSnapshot(Entity entity) {
+        return Overcharge.storedSnapshot(entity);
+    }
+
+    /**
+     * Stores an overcharge snapshot on an entity another mod's spell created (server only, ignored on the client), e.g.
+     * {@code setOverchargeSnapshot(summon, getOverchargeBonus(player))} when the summon is created, or {@code 1.0} if the
+     * spell did not cost mana. Saved with the entity like the snapshots of Spell Engine summons; Spell Engine hits of
+     * that entity use it too. Negative values are stored as 0.
+     *
+     * @param bonus the multiplier, {@code 1.0} = no bonus
+     * @throws IllegalArgumentException if {@code bonus} is NaN or infinite
+     * @apiNote Experimental: may still change in later versions.
+     */
+    @ApiStatus.Experimental
+    public static void setOverchargeSnapshot(Entity entity, double bonus) {
+        Overcharge.storeSnapshot(entity, bonus);
     }
 }

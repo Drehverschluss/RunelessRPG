@@ -12,6 +12,8 @@ import net.spell_engine.api.spell.event.SpellEvents;
 import net.spell_engine.entity.SpellProjectile;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.OptionalDouble;
+
 /**
  * Overcharge on spell damage and healing (server side, inside Spell Engine's {@code performImpact}).
  * <ul>
@@ -44,6 +46,23 @@ public final class Overcharge {
 
     private static double rawSnapshot(Entity entity) {
         return entity.hasData(ManaAttachments.OVERCHARGE_SNAPSHOT) ? entity.getData(ManaAttachments.OVERCHARGE_SNAPSHOT) : 1.0;
+    }
+
+    /** The stored snapshot of an entity (ignores {@code overchargeAffectsSummons}), empty if it has none. */
+    public static OptionalDouble storedSnapshot(Entity entity) {
+        return entity.hasData(ManaAttachments.OVERCHARGE_SNAPSHOT)
+                ? OptionalDouble.of(entity.getData(ManaAttachments.OVERCHARGE_SNAPSHOT))
+                : OptionalDouble.empty();
+    }
+
+    /** Stores a snapshot on an entity (server side only, ignored on the client). */
+    public static void storeSnapshot(Entity entity, double bonus) {
+        if (!Double.isFinite(bonus)) {
+            throw new IllegalArgumentException("Overcharge snapshot must be a finite number: " + bonus);
+        }
+        if (!entity.level().isClientSide()) {
+            entity.setData(ManaAttachments.OVERCHARGE_SNAPSHOT, Math.max(0.0, bonus));
+        }
     }
 
     /**

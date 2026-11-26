@@ -178,7 +178,8 @@ KubeJS: [Wiki → API and events](https://github.com/Drehverschluss/RunelessRPG/
 - **Just Enough Effect Descriptions (JEED)** shows short descriptions of all five effects.
 - **Other mana systems**: since 0.4.0 an experimental API lets another mod share one mana pool with RunelessRPG
   (replaceable storage, debt account, cost helpers, Spell Mana Leech for its spells, display unit), see
-  [Wiki → API and events](https://github.com/Drehverschluss/RunelessRPG/wiki/API-and-Events#other-mana-systems).
+  [Wiki → API and events](https://github.com/Drehverschluss/RunelessRPG/wiki/API-and-Events#other-mana-systems). Since 0.4.1 it also gives the overcharge cost factor and bonus for their spells.
+- **RunelessRPG Mana Bridge** uses this API to share one mana pool with Iron's Spells 'n Spellbooks and Ars Nouveau; the pack chooses which mod leads: [CurseForge](https://www.curseforge.com/minecraft/mc-mods/runelessrpg-mana-bridge), [GitHub](https://github.com/Drehverschluss/RunelessRPG-Mana-Bridge), [Wiki](https://github.com/Drehverschluss/RunelessRPG-Mana-Bridge/wiki).
 
 ## Project layout
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.1
+
+### Overcharge API for other mods' spells
+
+- New experimental API so that other mods' spells can use Overcharge by the same rules as Spell Engine spells. Without such a mod nothing changes in the game: same values, same display, same configs and defaults.
+- `getOverchargeCostFactor` (1 + Overcharge) and `getCostMultiplierWithOvercharge` (Mana Cost with its floor and Spell Infinity, then Overcharge), so other spells pay exactly like Spell Engine spells. Client and server.
+- `getOverchargeBonus(Player)`: the damage and healing multiplier of a player without a Spell Engine spell. Client and server, e.g. for tooltips. The method for Spell Engine spells is unchanged.
+- The settings `overchargeDamageFactor` and `overchargeAffectsHealing` can be read on both sides, `overchargeAffectsSummons` on the server.
+- `getOverchargeSnapshot` and `setOverchargeSnapshot`: other mods' summons and zones can keep the overcharge bonus they were created with, saved with the entity like the snapshot of Spell Engine summons.
+- Same network protocol as 0.4.0 (11): clients and servers with 0.4.0 and 0.4.1 work together.
+
+### Compatibility
+
+- RunelessRPG Mana Bridge is out as a beta: it uses the API to share one mana pool with Iron's Spells 'n Spellbooks and Ars Nouveau, and the pack chooses which mod leads.
+
 ## 0.4.0
 
 ### API for other mana systems

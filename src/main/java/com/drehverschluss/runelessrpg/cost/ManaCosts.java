@@ -187,9 +187,19 @@ public final class ManaCosts {
         if (!info.costsMana()) {
             return 1.0;
         }
+        return overchargeBonus(player);
+    }
+
+    /** Overcharge multiplier for damage / healing of this player right now, without a spell: 1 + overcharge × factor. */
+    public static double overchargeBonus(Player player) {
         CostSettings settings = CostSettings.forSide(player.level().isClientSide());
         double overcharge = player.getAttributeValue(RunelessAttributes.OVERCHARGE);
         return 1.0 + Math.max(0.0, overcharge) * settings.overchargeDamageFactor();
+    }
+
+    /** Overcharge cost factor of this player right now: 1 + overcharge (the same factor {@link #cost} uses). */
+    public static double overchargeCostFactor(Player player) {
+        return 1.0 + player.getAttributeValue(RunelessAttributes.OVERCHARGE);
     }
 
     /** Final cost for the player (total for the full channel duration of channeled spells). */
